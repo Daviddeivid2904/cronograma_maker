@@ -1,11 +1,69 @@
+/* === Habilitar Tailwind === */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* === Personalizaciones del proyecto (no cubiertas por Tailwind) === */
+
+/* Variables y look & feel general */
 :root {
-  --slot-height: 40px; /* alto de 1 hora / 2 (30min) => 20px si querés más compacto */
-  --hour-step: 30; /* minutos por fila */
+  --bg: #f8fafc;       /* slate-50 */
+  --fg: #0f172a;       /* slate-900 */
+  --muted: #64748b;    /* slate-500 */
+  --border: #e5e7eb;   /* gray-200 */
+  --slot-height: 36px; /* alto de cada fila de tiempo (desktop) */
 }
-/* Scrollbar suave en columnas */
-.col-scroll::-webkit-scrollbar { width: 8px; }
-.col-scroll::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 9999px; }
+
+/* Altura de cada slot (WeekGrid usa h-[var(--slot-height)]) */
+@media (max-width: 1024px) {
+  :root { --slot-height: 34px; }
+}
+@media (max-width: 768px) {
+  :root { --slot-height: 32px; }
+}
+@media (max-width: 480px) {
+  :root { --slot-height: 30px; }
+}
+
+/* Scroll horizontal suave para la grilla en móvil */
+.col-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.col-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.col-scroll::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+.col-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+/* Tarjetas reutilizables (usadas en Paleta/Lista/Recreo) */
+.card {
+  @apply bg-white border border-gray-200 rounded-xl p-3 shadow-sm;
+}
+
+/* Objetivos táctiles cómodos en móvil */
+@media (hover: none) and (pointer: coarse) {
+  .tap-target { min-height: 40px; }
+}
+
+/* Accesibilidad foco por defecto (además podés usar ring-* de Tailwind) */
+:focus-visible {
+  outline: 2px solid #6366f1; /* indigo-500 */
+  outline-offset: 2px;
+}
+
+/* (Opcional) Tipografía base — si querés forzarla globalmente
+html, body, #root { height: 100%; }
+body {
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+*/

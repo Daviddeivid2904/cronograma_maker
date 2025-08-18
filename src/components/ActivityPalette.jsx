@@ -1,153 +1,212 @@
+// src/components/ActivityPalette.jsx
 import React, { useEffect, useRef, useState } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 
 const COLORS = [
-  '#60a5fa','#34d399','#f472b6','#f59e0b','#a78bfa','#fb7185','#22d3ee','#4ade80'
+  '#60a5fa', '#34d399', '#f472b6', '#f59e0b',
+  '#a78bfa', '#fb7185', '#22d3ee', '#4ade80',
+  '#ef4444', '#10b981', '#f97316', '#6366f1',
 ]
 
-// Pasteles lindos para el popover
-const EXTRA_COLORS = [
-  '#fde2e4','#fad2e1','#e2ece9','#bee1e6','#cddafd',
-  '#d1d1e9','#ffe5ec','#fff1e6','#e2f0cb','#cdeac0',
-  '#ffe0ac','#ffd6a5','#ffc6ff','#bde0fe','#caffbf'
-]
-
-// Componente para cada bloque de actividad en la paleta
 function ActivityBlock({ activity }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: `palette-${activity.id}`,
-    data: { 
+    data: {
       type: 'palette-activity',
-      activity: activity 
-    }
+      activity,
+    },
   })
 
   const style = {
     transform: CSS.Translate.toString(transform),
+    touchAction: 'none', // mejora arrastre en móvil
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      className="flex items-center justify-center p-3 rounded-lg shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-all duration-200 hover:scale-105"
-      style={{ ...style, backgroundColor: activity.color }}
-    >
-      <div className="text-white font-medium text-sm text-center">{activity.name}</div>
+    <div className="flex items-center gap-2 select-none">
+      <div
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
+        style={style}
+        className="rounded-lg shadow-sm border px-3 py-2 cursor-grab active:cursor-grabbing"
+        title="Arrastrá a la grilla"
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block w-3 h-3 rounded-full border"
+            style={{ backgroundColor: activity.color }}
+            aria-hidden
+          />
+          <span className="text-sm font-medium">{activity.name}</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="text-xs rounded-lg border px-2 py-1 tap-target"
+        onClick={() => {
+          window.dispatchEvent(new CustomEvent('arm-place-activity', { detail: { activity } }))
+        }}
+        title="Colocar esta actividad tocando una casilla en la grilla"
+      >
+        Colocar
+      </button>
     </div>
   )
 }
 
-export default function ActivityPalette({ onAdd, activities = [] }){
+export default function ActivityPalette({ onAdd, activities = [] }) {
   const [name, setName] = useState('')
   const [color, setColor] = useState(COLORS[0])
 
-  // Estado y refs para el popover de “más colores”
+  // Popover de "más colores"
   const [showMoreColors, setShowMoreColors] = useState(false)
-  const moreBtnRef = useRef(null)
   const popRef = useRef(null)
 
-  // Cerrar el popover si se clickea fuera
+  // Cerrar si clickean/tocan fuera
   useEffect(() => {
-    function onDown(e) {
+    function onDocClick(e) {
       if (!showMoreColors) return
-      if (popRef.current?.contains(e.target)) return
-      if (moreBtnRef.current?.contains(e.target)) return
-      setShowMoreColors(false)
+      if (popRef.current && !popRef.current.contains(e.target)) {
+        setShowMoreColors(false)
+      }
     }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('touchstart', onDocClick)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('touchstart', onDocClick)
+    }
   }, [showMoreColors])
 
-  function handleAdd(e){
+  function handleSubmit(e) {
     e.preventDefault()
-    const n = name.trim()
-    if(!n) return
-    onAdd({ name: n, color })
+    const trimmed = name.trim()
+    if (!trimmed) return
+    onAdd?.({ name: trimmed, color })
     setName('')
   }
 
   return (
-    <div className="space-y-4">
-      {/* Formulario para agregar actividades */}
-      <form onSubmit={handleAdd} className="flex flex-col gap-2 md:flex-row items-stretch md:items-end">
-        <div className="flex-1">
-          <label className="block text-sm text-gray-700 mb-1">Nueva actividad / materia</label>
+    <div>
+      <h2 className="text-sm font-semibold mb-2">Paleta de actividades</h2>
+
+      {/* Formulario responsive para crear actividad */}
+      <form onSubmit={handleSubmit} className="grid gap-2">
+        <div className="grid gap-1">
+          <label className="text-xs" htmlFor="activity-name">Nombre</label>
           <input
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Ej: Matematica"
+            id="activity-name"
             value={name}
-            onChange={e=>setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
+            className="rounded-lg border px-3 py-2 tap-target"
+            placeholder="Ej. Química Inorgánica"
           />
         </div>
-        <div className="relative">
-          <label className="block text-sm text-gray-700 mb-1">Color</label>
-          <div className="relative flex gap-2 flex-wrap">
-            {/* Renderizamos todos menos el último */}
-            {COLORS.slice(0, COLORS.length - 1).map(c=>(
-              <button type="button" key={c}
-                onClick={()=>setColor(c)}
-                className="w-7 h-7 rounded-lg border"
-                style={{ backgroundColor:c, outline: color===c ? '3px solid rgba(0,0,0,0.2)' : 'none' }}
-                aria-label={`color ${c}`}
-                title={c}
-              />
-            ))}
 
-            {/* Botón + en lugar del último color */}
+        <div className="grid gap-1">
+          <span className="text-xs">Color</span>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              {COLORS.slice(0, 6).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className="w-6 h-6 rounded-full border-2"
+                  style={{ backgroundColor: c, borderColor: color === c ? '#111827' : 'transparent' }}
+                  aria-label={`Elegir color ${c}`}
+                  title={c}
+                />
+              ))}
+            </div>
+
             <button
-              ref={moreBtnRef}
               type="button"
-              onClick={() => setShowMoreColors(v => !v)}
-              className="w-7 h-7 rounded-lg border flex items-center justify-center text-gray-600 hover:bg-gray-50"
-              aria-expanded={showMoreColors ? 'true' : 'false'}
-              title={showMoreColors ? 'Ocultar más colores' : 'Más colores'}
+              className="text-xs rounded-lg border px-2 py-1"
+              onClick={() => setShowMoreColors((s) => !s)}
+              aria-expanded={showMoreColors}
+              aria-controls="more-colors-pop"
+              title="Más colores"
             >
-              {showMoreColors ? '–' : '+'}
+              Más colores
             </button>
 
-            {/* Mini-pestañita con colores pasteles (pegada al +) */}
             {showMoreColors && (
-              <div
-                ref={popRef}
-                className="absolute z-20 top-full mt-2 right-0 rounded-xl border bg-white shadow-lg p-3"
-              >
-                <div className="text-[11px] text-gray-500 mb-2">Más colores</div>
-                <div className="flex flex-wrap gap-2 max-w-[220px]">
-                  {EXTRA_COLORS.map(c => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => { setColor(c); setShowMoreColors(false) }}
-                      className="w-6 h-6 rounded-full border-2"
-                      style={{ backgroundColor: c, borderColor: color === c ? 'black' : 'transparent' }}
-                      aria-label={`Elegir color ${c}`}
-                      title={c}
-                    />
-                  ))}
+              <div id="more-colors-pop" ref={popRef} className="relative z-20">
+                <div className="absolute mt-2 rounded-lg border bg-white p-2 shadow-sm"
+                     style={{ minWidth: 180 }}>
+                  <div className="grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
+                    {COLORS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => { setColor(c); setShowMoreColors(false) }}
+                        className="w-6 h-6 rounded-full border-2"
+                        style={{ backgroundColor: c, borderColor: color === c ? '#111827' : 'transparent' }}
+                        aria-label={`Elegir color ${c}`}
+                        title={c}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="mt-2">
+                    <label className="text-xs">Personalizado</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={color}
+                        onChange={(e) => setColor(e.target.value)}
+                        aria-label="Elegir color personalizado"
+                        title={color}
+                      />
+                      <input
+                        className="rounded-lg border px-2 py-1 text-xs"
+                        value={color}
+                        onChange={(e) => setColor(e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </div>
-        <button className="mt-2 md:mt-0 rounded-lg bg-indigo-600 text-white px-4 py-2 hover:bg-indigo-700">
-          Agregar
-        </button>
+
+        <div className="flex items-center gap-8">
+          <button type="submit" className="rounded-lg border px-3 py-2 tap-target">
+            Agregar
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs">Seleccionado:</span>
+            <span className="inline-flex items-center gap-2 rounded-full border px-2 py-1">
+              <span className="w-3 h-3 rounded-full border" style={{ background: color }} />
+              <span className="text-xs">{color}</span>
+            </span>
+          </div>
+        </div>
       </form>
 
-      {/* Paleta de actividades creadas */}
-      {activities.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Actividades disponibles - Arrastra a la grilla</h3>
-          <div className="flex flex-wrap gap-3">
-            {activities.map(activity => (
+      {/* Lista de actividades disponibles para arrastrar o "colocar" */}
+      <div className="mt-3">
+        <h3 className="text-sm font-medium mb-2">Actividades disponibles</h3>
+
+        {activities.length === 0 ? (
+          <div className="text-xs text-gray-500">
+            No hay actividades aún. Creá una arriba y arrastrala a la grilla,
+            o usá "Colocar" y tocá una casilla.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {activities.map((activity) => (
               <ActivityBlock key={activity.id} activity={activity} />
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

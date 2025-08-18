@@ -3,7 +3,6 @@ import React, { useMemo, useState } from 'react'
 import ActivityPalette from './components/ActivityPalette.jsx'
 import ActivityList from './components/ActivityList.jsx'
 import SettingsBar from './components/SettingsBar.jsx'
-import BreakTools from './components/BreakTools.jsx'
 import WeekGrid from './components/WeekGrid.jsx'
 import { computeDaysRange } from './lib/time.js'
 
@@ -18,7 +17,8 @@ export default function App() {
     end:   '22:00',
     stepMin: 30,
     lunchEnabled: false,
-    lunchTime: '13:00',
+    lunchStart: '13:00',
+    lunchEnd: '14:00',
   })
 
   const days = useMemo(
@@ -55,7 +55,8 @@ export default function App() {
     end:   settings.end,
     stepMin: settings.stepMin,
     lunchEnabled: settings.lunchEnabled,
-    lunchTime: settings.lunchTime,
+    lunchStart: settings.lunchStart,
+    lunchEnd: settings.lunchEnd,
   }
 
   return (
@@ -68,10 +69,9 @@ export default function App() {
         <span className="text-sm text-indigo-600">by AIKE</span>
       </header>
 
-      <SettingsBar value={settings} onChange={setSettings} />
+      <SettingsBar value={settings} onChange={setSettings} onCreateBreakCard={handleCreateBreakCard} />
 
       <ActivityPalette onAdd={handleAddActivity} />
-      <BreakTools onCreateBreakCard={handleCreateBreakCard} />
 
       <WeekGrid activities={activities} config={gridConfig}>
         <ActivityList
