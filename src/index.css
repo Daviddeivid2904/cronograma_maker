@@ -29,7 +29,6 @@
 .col-scroll {
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
 .col-scroll::-webkit-scrollbar {

@@ -126,6 +126,7 @@ export default function WeekGrid({ activities, config, children }) {
 
   // "armar" para colocar por click (desde Palette/List/BreakTools)
   const [placeActivity, setPlaceActivity] = useState(null)
+  const [moveBlockId, setMoveBlockId] = useState(null);
 
   // sensores: pointer + touch (mejor drag en móvil)
   const sensors = useSensors(
@@ -220,7 +221,7 @@ export default function WeekGrid({ activities, config, children }) {
 
   // crear bloque
   function addBlockAt({ dayIndex, startSlot, durationSlots, activity }) {
-    const endSlot = Math.min(slots.length, startSlot + durationSlots)
+    const endSlot = Math.min(slots.length, startSlot + durationSlots);
     const newBlock = {
       id: crypto.randomUUID(),
       dayIndex,
@@ -231,13 +232,42 @@ export default function WeekGrid({ activities, config, children }) {
       activityId: activity.id,
       name: activity.name,
       color: activity.color,
-      timeLabel: slotIndexToLabel(start, stepMin, startSlot, endSlot),
-    }
-    setBlocks(prev => [...prev, newBlock])
+      // CORRECTO: sumar +1 a ambos índices
+      timeLabel: slotIndexToLabel(start, stepMin, startSlot + 1, endSlot + 1),
+    };
+    setBlocks(prev => [...prev, newBlock]);
+  }
+
+  // Al seleccionar un bloque, activar modo mover si ya está seleccionado
+  function handleBlockSelect(id) {
+    setSelectedId(id);
+    setMoveBlockId(id);
+    setPlaceActivity(null);
   }
 
   // click en celda -> colocar si está armado
   function handleCellClick(dayIndex, slotIndex) {
+    if (moveBlockId) {
+      setBlocks(prev => prev.map(b => {
+        if (b.id !== moveBlockId) return b;
+        const duration = b.endSlot - b.startSlot;
+        const newStart = slotIndex;
+        const newEnd = Math.min(slots.length, newStart + duration);
+        return {
+          ...b,
+          dayIndex,
+          startSlot: newStart,
+          endSlot: newEnd,
+          topPx: toTopPx(newStart),
+          heightPx: toHeightPx(newStart, newEnd),
+          // CORRECTO: sumar +1 a ambos índices
+          timeLabel: slotIndexToLabel(start, stepMin, newStart + 1, newEnd + 1),
+        };
+      }));
+      setSelectedId(moveBlockId);
+      setMoveBlockId(null);
+      return;
+    }
     if (!placeActivity) return
     const defaultDur = Math.max(2, Math.round(60 / stepMin))
     addBlockAt({ dayIndex, startSlot: slotIndex, durationSlots: defaultDur, activity: placeActivity })
@@ -279,7 +309,8 @@ export default function WeekGrid({ activities, config, children }) {
           endSlot: newEnd,
           topPx: toTopPx(newStart),
           heightPx: toHeightPx(newStart, newEnd),
-          timeLabel: slotIndexToLabel(start, stepMin, newStart, newEnd),
+          // Ajuste a 1-based para etiquetas
+          timeLabel: slotIndexToLabel(start, stepMin, newStart + 1, newEnd + 1),
         }
       }))
       setSelectedId(id)
@@ -315,7 +346,8 @@ export default function WeekGrid({ activities, config, children }) {
           ...b,
           endSlot: newEnd,
           heightPx: toHeightPx(b.startSlot, newEnd),
-          timeLabel: slotIndexToLabel(start, stepMin, b.startSlot, newEnd),
+          // Ajuste a 1-based para etiquetas
+          timeLabel: slotIndexToLabel(start, stepMin, b.startSlot + 1, newEnd + 1),
         }
       } else {
         const maxStart = b.endSlot - 1
@@ -325,7 +357,8 @@ export default function WeekGrid({ activities, config, children }) {
           startSlot: newStart,
           topPx: toTopPx(newStart),
           heightPx: toHeightPx(newStart, b.endSlot),
-          timeLabel: slotIndexToLabel(start, stepMin, newStart, b.endSlot),
+          // Ajuste a 1-based para etiquetas
+          timeLabel: slotIndexToLabel(start, stepMin, newStart + 1, b.endSlot + 1),
         }
       }
     }))
@@ -363,6 +396,9 @@ export default function WeekGrid({ activities, config, children }) {
   const headerCols = isMobile
     ? `minmax(48px, 70px) repeat(${days.length}, minmax(160px, 1fr))`
     : `minmax(80px, 120px) repeat(${days.length}, minmax(140px, 1fr))`
+  const leftColWidth = isMobile ? 'minmax(48px, 70px)' : 'minmax(80px, 120px)'
+  const dayColWidth = isMobile ? 'minmax(160px, 1fr)' : 'minmax(140px, 1fr)'
+  const rightHeaderCols = `repeat(${days.length}, ${dayColWidth})`
 
   return (
     <DndContext sensors={sensors} onDragEnd={onDragEnd}>
@@ -382,104 +418,85 @@ export default function WeekGrid({ activities, config, children }) {
         onTouchEnd={endResize}
       >
         {/* Contenedor principal con scroll sincronizado solo en móvil */}
-        <div className={`relative ${isMobile ? 'overflow-x-auto col-scroll' : 'w-full'}`}>
-          {/* Cabecera */}
-          <div className="grid sticky top-0 z-10 bg-white"
-               style={{ gridTemplateColumns: headerCols }}>
-            <div className="p-3 text-xs sm:text-sm font-medium text-gray-600 min-w-[48px]">
-              {isPlacementArmed ? 'Modo colocar' : 'Hora'}
-            </div>
-            {days.map(d => (
-              <div key={d}
-                   className="p-3 text-center text-xs sm:text-sm font-semibold text-gray-700 border-l border-gray-100 min-w-[160px]">
-                {d}
+        <div className="relative">
+          <div className="grid" style={{ gridTemplateColumns: `${leftColWidth} 1fr` }}>
+            {/* Columna fija de horas (no scrollea horizontal) */}
+            <div className="relative">
+              <div className="sticky top-0 z-30 bg-white p-3 text-xs sm:text-sm font-medium text-gray-600 border-b border-gray-100">
+                {isPlacementArmed ? 'Modo colocar' : 'Hora'}
               </div>
-            ))}
-          </div>
-
-          {/* Grilla */}
-          <div className="grid" style={{ gridTemplateColumns: headerCols }}>
-              {/* columna horas */}
               <div className="relative">
                 {slots.map((_, i) => {
-                  // Calcular la hora real para este slot
                   const [sh, sm] = start.split(':').map(Number)
                   const base = sh * 60 + sm
                   const slotTime = base + (i * stepMin)
                   const h = String(Math.floor(slotTime / 60)).padStart(2, '0')
                   const m = String(slotTime % 60).padStart(2, '0')
                   const timeLabel = `${h}:${m}`
-                  
                   return (
-                    <div key={i}
-                         className="border-t border-gray-100 text-[10px] sm:text-xs text-gray-500 h-[var(--slot-height)] flex items-start justify-end pr-2">
-                      {(i % Math.round(60 / stepMin) === 0) && (
-                        <span>
-                          {timeLabel}
-                        </span>
-                      )}
+                    <div key={i} className="border-t border-gray-100 text-[10px] sm:text-xs text-gray-500 h-[var(--slot-height)] flex items-start justify-end pr-2">
+                      {(i % Math.round(60 / stepMin) === 0) && (<span>{timeLabel}</span>)}
                     </div>
                   )
                 })}
                 {lunchSlotIndex != null && (
-                  <div
-                    className="absolute left-0 right-0 border-t-2 border-rose-300 pointer-events-none"
-                    style={{ top: toTopPx(lunchSlotIndex) }}
-                  />
+                  <div className="absolute left-0 right-0 border-t-2 border-rose-300 pointer-events-none" style={{ top: toTopPx(lunchSlotIndex) }} />
                 )}
                 {lunchEndSlotIndex != null && (
-                  <div
-                    className="absolute left-0 right-0 border-t-2 border-rose-300 pointer-events-none"
-                    style={{ top: toTopPx(lunchEndSlotIndex) }}
-                  />
+                  <div className="absolute left-0 right-0 border-t-2 border-rose-300 pointer-events-none" style={{ top: toTopPx(lunchEndSlotIndex) }} />
                 )}
                 {lunchSlotIndex != null && lunchEndSlotIndex != null && (
-                  <div
-                    className="absolute left-0 right-0 bg-rose-50 pointer-events-none opacity-30"
-                    style={{ 
-                      top: toTopPx(lunchSlotIndex), 
-                      height: toHeightPx(lunchSlotIndex, lunchEndSlotIndex) 
-                    }}
-                  />
+                  <div className="absolute left-0 right-0 bg-rose-50 pointer-events-none opacity-30" style={{ top: toTopPx(lunchSlotIndex), height: toHeightPx(lunchSlotIndex, lunchEndSlotIndex) }} />
                 )}
               </div>
+            </div>
 
-              {/* columnas por día */}
-              {days.map((_, dayIndex) => (
-                <div
-                  key={dayIndex}
-                  className="relative"
-                  ref={(el) => { if (el) columnRefs.current[dayIndex] = el }}
-                  style={{ minWidth: isMobile ? 160 : 'auto' }}
-                >
-                  {/* celdas */}
-                  {slots.map((_, slotIndex) => (
-                    <Cell
-                      key={slotIndex}
-                      dayIndex={dayIndex}
-                      slotIndex={slotIndex}
-                      onCellClick={handleCellClick}
-                      isPlacementArmed={isPlacementArmed}
-                    />
-                  ))}
+            {/* Área scrolleable (cabecera de días + columnas por día) */}
+            <div className="relative overflow-x-auto col-scroll">
+              <div className="grid sticky top-0 z-10 bg-white" style={{ gridTemplateColumns: rightHeaderCols }}>
+                {days.map(d => (
+                  <div key={d} className="p-3 text-center text-xs sm:text-sm font-semibold text-gray-700 border-l border-gray-100 min-w-[160px]">
+                    {d}
+                  </div>
+                ))}
+              </div>
 
-                  {/* bloques de este día */}
-                  {blocks
-                    .filter(b => b.dayIndex === dayIndex)
-                    .map(b => (
-                      <DraggableBlock
-                        key={b.id}
-                        block={b}
-                        selected={selectedId === b.id}
-                        onSelect={setSelectedId}
-                        onResizeStartTop={(id) => beginResize(id, 'top')}
-                        onResizeStartBottom={(id) => beginResize(id, 'bottom')}
+              <div className="grid" style={{ gridTemplateColumns: rightHeaderCols }}>
+                {days.map((_, dayIndex) => (
+                  <div
+                    key={dayIndex}
+                    className="relative"
+                    ref={(el) => { if (el) columnRefs.current[dayIndex] = el }}
+                    style={{ minWidth: isMobile ? 160 : 'auto' }}
+                  >
+                    {slots.map((_, slotIndex) => (
+                      <Cell
+                        key={slotIndex}
+                        dayIndex={dayIndex}
+                        slotIndex={slotIndex}
+                        onCellClick={handleCellClick}
+                        isPlacementArmed={isPlacementArmed}
                       />
                     ))}
-                </div>
-              ))}
+
+                    {blocks
+                      .filter(b => b.dayIndex === dayIndex)
+                      .map(b => (
+                        <DraggableBlock
+                          key={b.id}
+                          block={b}
+                          selected={selectedId === b.id}
+                          onSelect={handleBlockSelect}
+                          onResizeStartTop={(id) => beginResize(id, 'top')}
+                          onResizeStartBottom={(id) => beginResize(id, 'bottom')}
+                        />
+                      ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+        </div>
         </div>
 
       {isPlacementArmed && (
@@ -494,6 +511,17 @@ export default function WeekGrid({ activities, config, children }) {
           Modo colocar activo: tocá una casilla.
           <button
             onClick={() => { setPlaceActivity(null); window.dispatchEvent(new CustomEvent('cancel-place-activity')) }}
+            className="text-xs rounded-lg border px-3 py-1 hover:bg-white"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+      {moveBlockId && (
+        <div className="mt-3 p-3 rounded-xl text-sm flex items-center justify-between bg-yellow-50 border border-yellow-200 text-yellow-900">
+          Modo mover activo: tocá una celda destino.
+          <button
+            onClick={() => setMoveBlockId(null)}
             className="text-xs rounded-lg border px-3 py-1 hover:bg-white"
           >
             Cancelar

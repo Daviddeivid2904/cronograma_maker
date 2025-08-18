@@ -13,9 +13,9 @@ export default function App() {
   const [settings, setSettings] = useState({
     startDay: 'Lunes',
     endDay:   'Domingo',
-    start: '07:00',
-    end:   '22:00',
-    stepMin: 30,
+    start: '08:00',
+    end:   '18:00',
+    stepMin: 60,
     lunchEnabled: false,
     lunchStart: '13:00',
     lunchEnd: '14:00',

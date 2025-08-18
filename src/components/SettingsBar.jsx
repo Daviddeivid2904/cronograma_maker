@@ -13,13 +13,14 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
   const [endDay, setEndDay]           = useState(value.endDay)
   const [start, setStart]             = useState(value.start)
   const [end, setEnd]                 = useState(value.end)
-  const [stepMin, setStepMin]         = useState(value.stepMin)
+  const [stepMin, setStepMin]         = useState(value.stepMin ?? 60);
+  const presetSteps = [5, 10, 15, 20, 30, 45, 60, 90];
 
   // Estado para el panel de funciones avanzadas
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [lunchEnabled, setLunchEnabled] = useState(value.lunchEnabled ?? false)
-  const [lunchStart, setLunchStart] = useState(value.lunchTime ?? '13:00')
-  const [lunchEnd, setLunchEnd] = useState('14:00')
+  const [lunchStart, setLunchStart] = useState(value.lunchStart ?? '13:00')
+  const [lunchEnd, setLunchEnd] = useState(value.lunchEnd ?? '14:00')
   const [breakMinutes, setBreakMinutes] = useState(15)
   const [breakColor, setBreakColor] = useState('#94a3b8')
 
@@ -72,11 +73,14 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
         </div>
         <div>
           <label className="block text-xs text-gray-500 mb-1">Paso (min)</label>
-          <select className="w-full border rounded-lg px-2 py-2" value={stepMin} onChange={e=>setStepMin(Number(e.target.value))}>
-            <option value={30}>30</option>
-            <option value={45}>45</option>
-            <option value={60}>60</option>
-            <option value={90}>90</option>
+          <select
+            className="w-full border rounded-lg px-2 py-2"
+            value={stepMin}
+            onChange={e => setStepMin(Number(e.target.value))}
+          >
+            {presetSteps.map(v => (
+              <option key={v} value={v}>{v}</option>
+            ))}
           </select>
         </div>
       </div>
