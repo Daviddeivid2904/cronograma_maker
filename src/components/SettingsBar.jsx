@@ -14,7 +14,7 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
   const [start, setStart]             = useState(value.start)
   const [end, setEnd]                 = useState(value.end)
   const [stepMin, setStepMin]         = useState(value.stepMin ?? 60);
-  const presetSteps = [5, 10, 15, 20, 30, 45, 60, 90];
+  const presetSteps = [5, 10, 15, 20, 30, 45, 50, 60, 90];
 
   // Estado para el panel de funciones avanzadas
   const [showAdvanced, setShowAdvanced] = useState(false)

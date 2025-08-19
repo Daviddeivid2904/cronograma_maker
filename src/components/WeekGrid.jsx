@@ -117,7 +117,34 @@ export default function WeekGrid({ activities, config, children }) {
     lunchEnd = '14:00',
   } = config ?? {}
 
-  const slots = useMemo(() => buildTimeSlots({ start, end, stepMin }), [start, end, stepMin])
+  const slots = useMemo(() => {
+    const [eh, em] = end.split(':').map(Number)
+    const endMin = eh * 60 + em
+    if (!Number.isFinite(endMin) || !Number.isFinite(stepMin) || stepMin <= 0) {
+      return buildTimeSlots({ start, end, stepMin })
+    }
+    // Extender al próximo múltiplo del paso elegido
+    let extendedMin = endMin
+    const modStep = extendedMin % stepMin
+    extendedMin += modStep === 0 ? stepMin : (stepMin - modStep)
+    extendedMin = extendedMin % (24 * 60)
+    const ehh = String(Math.floor(extendedMin / 60)).padStart(2, '0')
+    const emm = String(extendedMin % 60).padStart(2, '0')
+    const endExtended = `${ehh}:${emm}`
+    return buildTimeSlots({ start, end: endExtended, stepMin })
+  }, [start, end, stepMin])
+
+  const endExtendedLabel = useMemo(() => {
+    const [eh, em] = end.split(':').map(Number)
+    let extendedMin = eh * 60 + em
+    if (!Number.isFinite(extendedMin)) return end
+    const modStep = extendedMin % stepMin
+    extendedMin += modStep === 0 ? stepMin : (stepMin - modStep)
+    extendedMin = extendedMin % (24 * 60)
+    const ehh = String(Math.floor(extendedMin / 60)).padStart(2, '0')
+    const emm = String(extendedMin % 60).padStart(2, '0')
+    return `${ehh}:${emm}`
+  }, [end, stepMin])
 
   // estado bloques
   const [blocks, setBlocks] = useState([])
@@ -162,6 +189,9 @@ export default function WeekGrid({ activities, config, children }) {
   // helpers top/height
   const toTopPx = (slotIndex) => slotIndex * slotPxRef.current
   const toHeightPx = (startSlot, endSlot) => (endSlot - startSlot) * slotPxRef.current
+  
+  // Para el resize, permitir hasta el slot extendido
+  const maxSlotIndex = slots.length
 
   // escuchar "arm-place-activity" y "cancel-place-activity"
   useEffect(() => {
@@ -221,7 +251,7 @@ export default function WeekGrid({ activities, config, children }) {
 
   // crear bloque
   function addBlockAt({ dayIndex, startSlot, durationSlots, activity }) {
-    const endSlot = Math.min(slots.length, startSlot + durationSlots);
+    const endSlot = Math.min(maxSlotIndex + 1, startSlot + durationSlots);
     const newBlock = {
       id: crypto.randomUUID(),
       dayIndex,
@@ -252,7 +282,7 @@ export default function WeekGrid({ activities, config, children }) {
         if (b.id !== moveBlockId) return b;
         const duration = b.endSlot - b.startSlot;
         const newStart = slotIndex;
-        const newEnd = Math.min(slots.length, newStart + duration);
+        const newEnd = Math.min(maxSlotIndex + 1, newStart + duration);
         return {
           ...b,
           dayIndex,
@@ -301,7 +331,7 @@ export default function WeekGrid({ activities, config, children }) {
         if (b.id !== id) return b
         const duration = b.endSlot - b.startSlot
         const newStart = slotIndex
-        const newEnd = Math.min(slots.length, newStart + duration)
+        const newEnd = Math.min(maxSlotIndex + 1, newStart + duration)
         return {
           ...b,
           dayIndex,
@@ -335,13 +365,13 @@ export default function WeekGrid({ activities, config, children }) {
     const y = e.clientY - rect.top
     const slotIndex = Math.min(
       Math.max(0, Math.round(y / slotPxRef.current)),
-      slots.length - 1
+      maxSlotIndex
     )
     setBlocks(prev => prev.map(b => {
       if (b.id !== resizing.id) return b
       if (resizing.handle === 'bottom') {
         const minEnd = b.startSlot + 1
-        const newEnd = Math.max(minEnd, slotIndex + 1)
+        const newEnd = Math.max(minEnd, Math.min(slotIndex + 1, maxSlotIndex + 1))
         return {
           ...b,
           endSlot: newEnd,
@@ -396,9 +426,11 @@ export default function WeekGrid({ activities, config, children }) {
   const headerCols = isMobile
     ? `minmax(48px, 70px) repeat(${days.length}, minmax(160px, 1fr))`
     : `minmax(80px, 120px) repeat(${days.length}, minmax(140px, 1fr))`
-  const leftColWidth = isMobile ? 'minmax(48px, 70px)' : 'minmax(80px, 120px)'
+  const leftColWidth = isMobile ? 'minmax(48px, 70px)' : 'minmax(60px, 80px)'
   const dayColWidth = isMobile ? 'minmax(160px, 1fr)' : 'minmax(140px, 1fr)'
   const rightHeaderCols = `repeat(${days.length}, ${dayColWidth})`
+
+  
 
   return (
     <DndContext sensors={sensors} onDragEnd={onDragEnd}>
@@ -439,6 +471,15 @@ export default function WeekGrid({ activities, config, children }) {
                     </div>
                   )
                 })}
+                {/* Línea y etiqueta del fin extendido (p.ej., 18:30) */}
+                <div className="absolute left-0 right-0 text-[10px] sm:text-xs text-gray-500" style={{ top: toTopPx(slots.length) }}>
+                  <div className="absolute left-0 right-0 border-t border-gray-200" />
+                </div>
+                {/* Etiqueta dentro de la celda extendida */}
+                <div className="border-t border-gray-100 text-[10px] sm:text-xs text-gray-500 h-[var(--slot-height)] flex items-start justify-end pr-2">
+                  <span>{endExtendedLabel}</span>
+                </div>
+                {/* ya extendemos, no mostramos marca de fracción */}
                 {lunchSlotIndex != null && (
                   <div className="absolute left-0 right-0 border-t-2 border-rose-300 pointer-events-none" style={{ top: toTopPx(lunchSlotIndex) }} />
                 )}
@@ -478,6 +519,16 @@ export default function WeekGrid({ activities, config, children }) {
                         isPlacementArmed={isPlacementArmed}
                       />
                     ))}
+
+                    {/* extendido: sin marca adicional */}
+                    {/* Celda extra para el período extendido */}
+                    <Cell
+                      key="extended"
+                      dayIndex={dayIndex}
+                      slotIndex={slots.length}
+                      onCellClick={handleCellClick}
+                      isPlacementArmed={isPlacementArmed}
+                    />
 
                     {blocks
                       .filter(b => b.dayIndex === dayIndex)
