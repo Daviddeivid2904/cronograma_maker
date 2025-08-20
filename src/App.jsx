@@ -4,10 +4,13 @@ import ActivityPalette from './components/ActivityPalette.jsx'
 import ActivityList from './components/ActivityList.jsx'
 import SettingsBar from './components/SettingsBar.jsx'
 import WeekGrid from './components/WeekGrid.jsx'
+import ExportPanel from './components/ExportPanel.jsx'
 import { computeDaysRange } from './lib/time.js'
 
 export default function App() {
   const [activities, setActivities] = useState([])
+  const [showExportPanel, setShowExportPanel] = useState(false)
+  const [blocks, setBlocks] = useState([])
 
   // Config (tu versión actual con lunch/horarios y rango de días)
   const [settings, setSettings] = useState({
@@ -66,20 +69,50 @@ export default function App() {
           <h1 className="text-2xl font-bold">Planificador semanal</h1>
           <p className="text-gray-600">Grilla por celdas: arrastrá, estirá y personalizá.</p>
         </div>
-        <span className="text-sm text-indigo-600">by AIKE</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowExportPanel(true)}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            📄 Exportar
+          </button>
+          <a
+            href="https://www.linkedin.com/in/david-lekerman/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-indigo-600 hover:underline"
+            title="LinkedIn de David Lekerman"
+          >
+            by David Lekerman
+          </a>
+        </div>
       </header>
 
       <SettingsBar value={settings} onChange={setSettings} onCreateBreakCard={handleCreateBreakCard} />
 
       <ActivityPalette onAdd={handleAddActivity} />
 
-      <WeekGrid activities={activities} config={gridConfig}>
+      <WeekGrid 
+        activities={activities} 
+        config={gridConfig}
+        onBlocksChange={setBlocks}
+      >
         <ActivityList
           activities={activities}
           onAddToGrid={handleAddToGrid}
           onDelete={handleDeleteActivity}
         />
       </WeekGrid>
+
+      {/* Panel de exportación */}
+      {showExportPanel && (
+        <ExportPanel
+          activities={activities}
+          blocks={blocks}
+          config={gridConfig}
+          onClose={() => setShowExportPanel(false)}
+        />
+      )}
 
       <footer className="text-center text-xs text-gray-500 pt-4">
         Próximamente: guardar en LocalStorage y exportar a PDF.

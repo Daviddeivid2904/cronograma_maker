@@ -106,7 +106,7 @@ function Cell({ dayIndex, slotIndex, onCellClick, isPlacementArmed }) {
 /* ===========================
    Componente principal
    =========================== */
-export default function WeekGrid({ activities, config, children }) {
+export default function WeekGrid({ activities, config, children, onBlocksChange }) {
   const {
     days = DAYS_FULL,
     start = '07:00',
@@ -148,6 +148,11 @@ export default function WeekGrid({ activities, config, children }) {
 
   // estado bloques
   const [blocks, setBlocks] = useState([])
+  
+  // Notificar cambios en bloques al padre
+  useEffect(() => {
+    onBlocksChange?.(blocks)
+  }, [blocks, onBlocksChange])
   const [selectedId, setSelectedId] = useState(null)
   const [resizing, setResizing] = useState(null) // { id, handle: 'top'|'bottom' }
 
@@ -426,7 +431,7 @@ export default function WeekGrid({ activities, config, children }) {
   const headerCols = isMobile
     ? `minmax(48px, 70px) repeat(${days.length}, minmax(160px, 1fr))`
     : `minmax(80px, 120px) repeat(${days.length}, minmax(140px, 1fr))`
-  const leftColWidth = isMobile ? 'minmax(48px, 70px)' : 'minmax(60px, 80px)'
+  const leftColWidth = isMobile ? 'minmax(54px, 78px)' : 'minmax(68px, 92px)'
   const dayColWidth = isMobile ? 'minmax(160px, 1fr)' : 'minmax(140px, 1fr)'
   const rightHeaderCols = `repeat(${days.length}, ${dayColWidth})`
 
@@ -462,9 +467,15 @@ export default function WeekGrid({ activities, config, children }) {
                   const [sh, sm] = start.split(':').map(Number)
                   const base = sh * 60 + sm
                   const slotTime = base + (i * stepMin)
+                  const nextSlotTime = base + ((i + 1) * stepMin)
+                  
                   const h = String(Math.floor(slotTime / 60)).padStart(2, '0')
                   const m = String(slotTime % 60).padStart(2, '0')
-                  const timeLabel = `${h}:${m}`
+                  const nextH = String(Math.floor(nextSlotTime / 60)).padStart(2, '0')
+                  const nextM = String(nextSlotTime % 60).padStart(2, '0')
+                  
+                  const timeLabel = `${h}:${m}-${nextH}:${nextM}`
+                  
                   return (
                     <div key={i} className="border-t border-gray-100 text-[10px] sm:text-xs text-gray-500 h-[var(--slot-height)] flex items-start justify-end pr-2">
                       {(i % Math.round(60 / stepMin) === 0) && (<span>{timeLabel}</span>)}

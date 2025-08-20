@@ -189,24 +189,6 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
           </div>
         </div>
       </form>
-
-      {/* Lista de actividades disponibles para arrastrar o "colocar" */}
-      <div className="mt-3">
-        <h3 className="text-sm font-medium mb-2">Actividades disponibles</h3>
-
-        {activities.length === 0 ? (
-          <div className="text-xs text-gray-500">
-            No hay actividades aún. Creá una arriba y arrastrala a la grilla,
-            o usá "Colocar" y tocá una casilla.
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {activities.map((activity) => (
-              <ActivityBlock key={activity.id} activity={activity} />
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   )
 }
