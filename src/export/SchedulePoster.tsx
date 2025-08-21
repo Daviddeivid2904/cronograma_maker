@@ -9,7 +9,8 @@ import {
   toMin, 
   toHHMM, 
   generateMajorTicks, 
-  generateSubTicks 
+  generateSubTicks,
+  gcdArray,
 } from './timeGrid';
 
 // ancho aproximado de una línea en píxeles (0.58em ≈ promedio latino)
@@ -31,19 +32,13 @@ function wrapToWidth(text: string, fontSize: number, maxWidth: number, maxLines 
     if (fits(t)) {
       cur = t;
     } else {
-      if (!cur) {
-        // palabra larguísima: corta duro por caracteres
-        let chunk = "";
-        for (const ch of w) {
-          if (fits(chunk + ch)) chunk += ch;
-          else { lines.push(chunk); chunk = ch; }
-          if (lines.length === maxLines) return lines;
-        }
-        cur = chunk;
-      } else {
+      if (cur) {
         lines.push(cur);
         cur = w;
         if (lines.length === maxLines - 1) break;
+      } else {
+        // palabra larga sola: no partir, dejar que fitTitle reduzca tamaño
+        cur = w;
       }
     }
   }
@@ -107,25 +102,28 @@ export default function SchedulePoster({
   const minStart = Math.min(...items.map(i => toMin(i.start)));
   const maxEnd = Math.max(...items.map(i => toMin(i.end)));
 
-  // anclar a horas cerradas
-  const hourStart = Math.floor(minStart / 60) * 60;
-  const hourEnd = Math.ceil(maxEnd / 60) * 60;
-  const hourCount = Math.max(1, (hourEnd - hourStart) / 60);
+  // Paso visible = GCD(duraciones) si es >= 30; si no, 30
+  const durations = items.map(i => Math.max(1, toMin(i.end) - toMin(i.start)));
+  let visibleStep = gcdArray(durations);
+  if (visibleStep < 30) visibleStep = 60;
 
-  // NUEVO: ocupar el alto disponible sin centrar
-  const availH = contentH - headerH - daysHeaderH - legendH;
-  const hourPx = Math.max(100, Math.min(140, Math.floor(availH / hourCount))); // ~100–140 px por hora
-  const gridH  = hourPx * hourCount;
+  // Ancla a inicio de hora
+  const hourStart = Math.floor(minStart / 60) * 60; // anchor
+  const hourEnd   = Math.ceil(maxEnd / 60) * 60;
+  const anchor    = hourStart;
+
+  // Segmentar por visibleStep
+  const segCount = Math.ceil((hourEnd - anchor) / visibleStep);
+  const availH   = contentH - headerH - daysHeaderH - legendH;
+  const segPx    = Math.max(100, Math.min(140, Math.floor(availH / segCount)));
+  const gridH    = segPx * segCount;
 
   // ANCLAR la grilla justo debajo de la cabecera de días (sin gap)
   const gridTop  = margin + headerH + daysHeaderH;
-  const pxPerMin = hourPx / 60;
+  const pxPerMin = segPx / visibleStep;
 
-  // Escala y posicionamiento (después de calcular gridTop)
-  const total = grid.endMin - grid.startMin;
-  const scale = gridH / total;
-  const yOf = (hhmm: string) => gridTop + (toMin(hhmm) - grid.startMin) * scale;
-  const yOfMin = (min: number) => gridTop + (min - grid.startMin) * scale;
+  // Escala en px por minuto y utilitario de posición exacta
+  const yOfMinExact = (min: number) => gridTop + (min - anchor) * pxPerMin;
 
   // Leyenda (materia→color)
   const legend = (() => {
@@ -144,15 +142,15 @@ export default function SchedulePoster({
       {/* Fondo */}
       <rect width={width} height={height} fill={colors.background} />
 
-      {/* Header */}
-      <g transform={`translate(${margin}, ${margin})`}>
+      {/* Header centrado */}
+      <g transform={`translate(${width/2}, ${margin})`}>
         {data.title && (
-          <text x={0} y={0} fontFamily="Inter, system-ui, Arial" fontWeight="700" fontSize="72" fill="#0f172a" dominantBaseline="hanging">
+          <text x={0} y={0} textAnchor="middle" fontFamily="Inter, system-ui, Arial" fontWeight="700" fontSize="72" fill="#0f172a" dominantBaseline="hanging">
             {data.title}
           </text>
         )}
         {data.subtitle && (
-          <text x={0} y={84} fontFamily="Inter, system-ui, Arial" fontWeight="500" fontSize="32" fill="#475569" dominantBaseline="hanging">
+          <text x={0} y={84} textAnchor="middle" fontFamily="Inter, system-ui, Arial" fontWeight="500" fontSize="32" fill="#475569" dominantBaseline="hanging">
             {data.subtitle}
           </text>
         )}
@@ -170,34 +168,34 @@ export default function SchedulePoster({
         <line x1={-2} y1={0} x2={-2} y2={daysHeaderH} stroke={borderColor} strokeWidth="2" />
       </g>
 
-      {/* Columna izquierda de horas */}
+      {/* Columna izquierda por segmento visible */}
       <g transform={`translate(${margin}, ${gridTop})`}>
         {/* Borde externo de la columna */}
         <rect x={0} y={0} width={leftColW} height={gridH} fill="#fff" stroke={borderColor} strokeWidth="2" />
         
-        {/* Filas de tiempo por hora */}
-        {Array.from({ length: hourCount }, (_, k) => (
+        {/* Filas de tiempo por segmento */}
+        {Array.from({ length: segCount }, (_, k) => (
           <g key={`hour-${k}`}>
             <rect 
               x={0} 
-              y={k * hourPx} 
+              y={k * segPx} 
               width={leftColW} 
-              height={hourPx} 
+              height={segPx} 
               fill="#f3f4f6" 
               stroke={borderColor} 
               strokeWidth="1.5" 
             />
             <text 
               x={leftColW/2} 
-              y={k * hourPx + hourPx/2}
+              y={k * segPx + segPx/2}
               textAnchor="middle" 
               dominantBaseline="central"
               fontFamily="Inter, system-ui, Arial" 
               fontWeight="700" 
-              fontSize="26" 
+              fontSize="24" 
               fill="#0f172a"
             >
-              {`${toHHMM(hourStart + k * 60)} – ${toHHMM(hourStart + (k + 1) * 60)}`}
+              {`${toHHMM(anchor + k * visibleStep)} – ${toHHMM(anchor + (k + 1) * visibleStep)}`}
             </text>
           </g>
         ))}
@@ -214,9 +212,9 @@ export default function SchedulePoster({
         ))}
         <line x1={gridW} y1={0} x2={gridW} y2={gridH} stroke={borderColor} strokeWidth="2" />
         
-        {/* Horizontales por hora */}
-        {Array.from({ length: hourCount + 1 }, (_, k) => (
-          <line key={`h-${k}`} x1={0} y1={k * hourPx} x2={gridW} y2={k * hourPx} stroke={borderColor} strokeWidth="1.5" />
+        {/* Horizontales por segmento */}
+        {Array.from({ length: segCount + 1 }, (_, k) => (
+          <line key={`h-${k}`} x1={0} y1={k * segPx} x2={gridW} y2={k * segPx} stroke={borderColor} strokeWidth={k === 0 || k === segCount ? 2 : 1.5} />
         ))}
       </g>
 
@@ -226,21 +224,27 @@ export default function SchedulePoster({
         const e = s + Number(data.lunch!.durationMin || 0);
         if (e <= grid.startMin || s >= grid.endMin) return null;
         
-        // Encontrar las horas que cubre el almuerzo
-        const startHour = Math.floor((s - hourStart) / 60);
-        const endHour = Math.ceil((e - hourStart) / 60);
+        // Hora exacta con tolerancia mínima
+        const EPS = 2; // minutos
+        const alignTolerant = (m: number) => {
+          const rel = m - anchor;
+          const mod = ((rel % visibleStep) + visibleStep) % visibleStep;
+          if (mod <= EPS) return m - mod;
+          if (visibleStep - mod <= EPS) return m + (visibleStep - mod);
+          return m;
+        };
+        const Ls = alignTolerant(s);
+        const Le = alignTolerant(e);
         
-        if (startHour < 0 || endHour > hourCount) return null;
-        
-        const y = gridTop + startHour * hourPx;
-        const h = (endHour - startHour) * hourPx;
+        const y = yOfMinExact(Ls);
+        const h = Math.max(0, (Le - Ls) * pxPerMin);
         
         return (
           <g transform={`translate(${gridLeft}, ${gridTop})`}>
-            <rect x={0} y={startHour * hourPx} width={gridW} height={h} fill="rgba(253,230,138,.35)" />
-            <line x1={0} y1={startHour * hourPx} x2={gridW} y2={startHour * hourPx} stroke={borderColor} strokeWidth="2" />
-            <line x1={0} y1={startHour * hourPx + h} x2={gridW} y2={startHour * hourPx + h} stroke={borderColor} strokeWidth="2" />
-            <text x={gridW / 2} y={startHour * hourPx + h / 2} textAnchor="middle" dominantBaseline="central" fontFamily="Inter, system-ui, Arial" fontWeight="700" fontSize="20" fill="#92400e">{data.lunch!.label || 'Almuerzo'}</text>
+            <rect x={0} y={y - gridTop} width={gridW} height={h} fill="rgba(253,230,138,.35)" />
+            <line x1={0} y1={y - gridTop} x2={gridW} y2={y - gridTop} stroke={borderColor} strokeWidth="2" />
+            <line x1={0} y1={y - gridTop + h} x2={gridW} y2={y - gridTop + h} stroke={borderColor} strokeWidth="2" />
+            <text x={gridW / 2} y={y - gridTop + h / 2} textAnchor="middle" dominantBaseline="central" fontFamily="Inter, system-ui, Arial" fontWeight="700" fontSize="20" fill="#92400e">{data.lunch!.label || 'Almuerzo'}</text>
           </g>
         );
       })()}
@@ -248,14 +252,20 @@ export default function SchedulePoster({
       {/* Bloques */}
       <g transform={`translate(${gridLeft}, ${gridTop})`}>
         {items.map((it, idx) => {
-          // suponiendo q = quantumMin (GCD) ya calculado
-          const roundDownQ = (m: number) => Math.floor(m / grid.quantumMin) * grid.quantumMin;
-          const roundUpQ = (m: number) => Math.ceil(m / grid.quantumMin) * grid.quantumMin;
+          // Hora exacta con tolerancia mínima (sin snap duro)
+          const EPS = 2; // minutos
+          const alignTolerant = (m: number) => {
+            const rel = m - anchor;
+            const mod = ((rel % visibleStep) + visibleStep) % visibleStep;
+            if (mod <= EPS) return m - mod;
+            if (visibleStep - mod <= EPS) return m + (visibleStep - mod);
+            return m;
+          };
 
-          const sMin = roundDownQ(toMin(it.start));
-          const eMin = roundUpQ(toMin(it.end));
+          const sMin = alignTolerant(toMin(it.start));
+          const eMin = alignTolerant(toMin(it.end));
 
-          const y = (sMin - hourStart) * pxPerMin;
+          const y = (sMin - anchor) * pxPerMin;
           const h = Math.max(4, (eMin - sMin) * pxPerMin); // mínimo 4px
           const x = it.dayIndex * colW + 2;
           const w = colW - 4;

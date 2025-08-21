@@ -3,11 +3,27 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 
-const COLORS = [
+// Colores rápidos (no cambiar): defaults fuertes
+const QUICK_COLORS = [
+  '#fde68a', '#fbcfe8', '#bfdbfe', '#bbf7d0',
+  '#ddd6fe', '#fecaca',
+];
+
+// Más colores: mitad pasteles NUEVOS y mitad fuertes normales
+const MORE_PASTEL_COLORS = [
+  '#bae6fd', '#fde2e2',
+  '#e9d5ff', '#c7d2fe', '#fee2b3', '#d1fae5',
   '#60a5fa', '#34d399', '#f472b6', '#f59e0b',
-  '#a78bfa', '#fb7185', '#22d3ee', '#4ade80',
-  '#ef4444', '#10b981', '#f97316', '#6366f1',
-]
+  '#a78bfa', '#fb7185', 
+];
+
+const MORE_STRONG_COLORS = [
+  '#22d3ee', '#4ade80', '#ef4444', '#10b981',
+  '#f97316', '#6366f1', '#0ea5e9', '#14b8a6',
+  '#eab308', '#db2777', '#7c3aed', '#ea580c',
+];
+
+const MORE_COLORS = [...MORE_PASTEL_COLORS, ...MORE_STRONG_COLORS];
 
 function ActivityBlock({ activity }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
@@ -59,7 +75,8 @@ function ActivityBlock({ activity }) {
 
 export default function ActivityPalette({ onAdd, activities = [] }) {
   const [name, setName] = useState('')
-  const [color, setColor] = useState(COLORS[0])
+  const [defaultIdx, setDefaultIdx] = useState(0)
+  const [color, setColor] = useState(QUICK_COLORS[0])
 
   // Popover de "más colores"
   const [showMoreColors, setShowMoreColors] = useState(false)
@@ -81,12 +98,27 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
     }
   }, [showMoreColors])
 
+  function getColorByIndex(idx) {
+    const totalQuick = QUICK_COLORS.length
+    if (idx < totalQuick) return QUICK_COLORS[idx]
+    const offset = idx - totalQuick
+    const totalMore = MORE_COLORS.length
+    if (offset < totalMore) return MORE_COLORS[offset]
+    // wrap
+    return QUICK_COLORS[0]
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
     const trimmed = name.trim()
     if (!trimmed) return
     onAdd?.({ name: trimmed, color })
     setName('')
+    // Avanzar el color por defecto al siguiente para la próxima tarjeta
+    const totalCount = QUICK_COLORS.length + MORE_COLORS.length
+    const next = (defaultIdx + 1) % totalCount
+    setDefaultIdx(next)
+    setColor(getColorByIndex(next))
   }
 
   return (
@@ -111,7 +143,7 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
 
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-2">
-              {COLORS.slice(0, 6).map((c) => (
+              {QUICK_COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
@@ -140,7 +172,7 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
                 <div className="absolute mt-2 rounded-lg border bg-white p-2 shadow-sm"
                      style={{ minWidth: 180 }}>
                   <div className="grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
-                    {COLORS.map((c) => (
+                    {MORE_COLORS.map((c) => (
                       <button
                         key={c}
                         type="button"
@@ -180,13 +212,6 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
           <button type="submit" className="rounded-lg border px-3 py-2 tap-target">
             Agregar
           </button>
-          <div className="flex items-center gap-2">
-            <span className="text-xs">Seleccionado:</span>
-            <span className="inline-flex items-center gap-2 rounded-full border px-2 py-1">
-              <span className="w-3 h-3 rounded-full border" style={{ background: color }} />
-              <span className="text-xs">{color}</span>
-            </span>
-          </div>
         </div>
       </form>
     </div>

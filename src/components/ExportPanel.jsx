@@ -4,9 +4,9 @@ import { buildScheduleDataFromState } from '../export/buildScheduleData';
 
 export default function ExportPanel({ activities, blocks, config, onClose }) {
   const [isExporting, setIsExporting] = useState(false);
-  const [exportFormat, setExportFormat] = useState('a4');
+  const [exportFormat, setExportFormat] = useState('square');
   const [theme, setTheme] = useState('classic');
-  const [showLegend, setShowLegend] = useState(true);
+  const [showLegend, setShowLegend] = useState(false);
   const [title, setTitle] = useState('Mi Horario Semanal');
   const [subtitle, setSubtitle] = useState('Planificador de Actividades');
 

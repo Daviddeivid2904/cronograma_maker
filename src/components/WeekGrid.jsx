@@ -57,10 +57,11 @@ function DraggableBlock({
       {/* manija superior */}
       <div
         className="absolute -top-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
-        onPointerDown={(e) => { e.stopPropagation(); onResizeStartTop(block.id) }}
-        onTouchStart={(e) => { e.stopPropagation(); onResizeStartTop(block.id) }}
+        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizeStartTop(block.id) }}
+        onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); onResizeStartTop(block.id) }}
         aria-label="Redimensionar desde arriba"
         title="Redimensionar"
+        style={{ touchAction: 'none' }}
       />
       {/* contenido */}
       <div className="px-2 py-2 text-xs leading-4">
@@ -70,10 +71,11 @@ function DraggableBlock({
       {/* manija inferior */}
       <div
         className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
-        onPointerDown={(e) => { e.stopPropagation(); onResizeStartBottom(block.id) }}
-        onTouchStart={(e) => { e.stopPropagation(); onResizeStartBottom(block.id) }}
+        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizeStartBottom(block.id) }}
+        onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); onResizeStartBottom(block.id) }}
         aria-label="Redimensionar desde abajo"
         title="Redimensionar"
+        style={{ touchAction: 'none' }}
       />
     </div>
   )
@@ -163,7 +165,8 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
   // sensores: pointer + touch (mejor drag en móvil)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor,   { activationConstraint: { delay: 80, tolerance: 8 } }),
+    useSensor(TouchSensor,   { activationConstraint: { delay: 80, tolerance: 8, // evita scroll durante gestos
+      } }),
   )
 
   // mido el alto del slot desde CSS var (cambia en responsive)

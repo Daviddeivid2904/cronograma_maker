@@ -15,7 +15,7 @@ export default function App() {
   // Config (tu versión actual con lunch/horarios y rango de días)
   const [settings, setSettings] = useState({
     startDay: 'Lunes',
-    endDay:   'Domingo',
+    endDay:   'Viernes',
     start: '08:00',
     end:   '18:00',
     stepMin: 60,
@@ -74,7 +74,7 @@ export default function App() {
             onClick={() => setShowExportPanel(true)}
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
           >
-            📄 Exportar
+            Descargar imagen
           </button>
           <a
             href="https://www.linkedin.com/in/david-lekerman/"
@@ -113,6 +113,16 @@ export default function App() {
           onClose={() => setShowExportPanel(false)}
         />
       )}
+
+      {/* Botón inferior para exportar */}
+      <div className="pt-4 flex justify-center">
+        <button
+          onClick={() => setShowExportPanel(true)}
+          className="bg-indigo-600 text-white px-5 py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          Descargar imagen
+        </button>
+      </div>
 
       <footer className="text-center text-xs text-gray-500 pt-4">
         Próximamente: guardar en LocalStorage y exportar a PDF.
