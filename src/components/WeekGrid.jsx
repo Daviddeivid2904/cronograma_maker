@@ -16,6 +16,9 @@ import {
   timeToSlotIndexRounded,
 } from '../lib/time.js'
 
+/* Utils */
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v))
+
 /* ===========================
    Bloque con drag + manijas
    =========================== */
@@ -23,8 +26,8 @@ function DraggableBlock({
   block,
   selected,
   onSelect,
-  onResizeStartTop,
-  onResizeStartBottom,
+  onResizePointerDown,   // (id, 'top'|'bottom', event)
+  onDelete,
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `block-${block.id}`,
@@ -52,28 +55,40 @@ function DraggableBlock({
         height: block.heightPx,
         backgroundColor: block.color,
         color: '#0f172a',
+        ...style,
       }}
     >
-      {/* manija superior */}
+      {/* botón eliminar */}
+      <button
+        type="button"
+        className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-white border text-gray-500 hover:text-red-600 hover:border-red-500 shadow-sm"
+        onPointerDown={(e)=>e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onDelete?.(block.id) }}
+        aria-label="Eliminar bloque"
+        title="Eliminar"
+        style={{ touchAction: 'none' }}
+      >
+        <span className="text-sm leading-none">×</span>
+      </button>
+
+      {/* manija superior (drag directo) */}
       <div
         className="absolute -top-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
-        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizeStartTop(block.id) }}
-        onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); onResizeStartTop(block.id) }}
-        aria-label="Redimensionar desde arriba"
+        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizePointerDown(block.id, 'top', e) }}
         title="Redimensionar"
         style={{ touchAction: 'none' }}
       />
+
       {/* contenido */}
-      <div className="px-2 py-2 text-xs leading-4">
+      <div className="px-2 py-2 text-xs leading-4 select-none">
         <div className="font-semibold truncate">{block.name}</div>
         <div className="opacity-80">{block.timeLabel}</div>
       </div>
-      {/* manija inferior */}
+
+      {/* manija inferior (drag directo) */}
       <div
         className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
-        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizeStartBottom(block.id) }}
-        onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); onResizeStartBottom(block.id) }}
-        aria-label="Redimensionar desde abajo"
+        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizePointerDown(block.id, 'bottom', e) }}
         title="Redimensionar"
         style={{ touchAction: 'none' }}
       />
@@ -150,29 +165,29 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
 
   // estado bloques
   const [blocks, setBlocks] = useState([])
-  
-  // Notificar cambios en bloques al padre
-  useEffect(() => {
-    onBlocksChange?.(blocks)
-  }, [blocks, onBlocksChange])
+  useEffect(() => { onBlocksChange?.(blocks) }, [blocks, onBlocksChange])
+
   const [selectedId, setSelectedId] = useState(null)
+
+  // Resize state (se maneja con listeners globales mientras está activo)
   const [resizing, setResizing] = useState(null) // { id, handle: 'top'|'bottom' }
+  const columnRefs = useRef({})
+  const resizingCol = useRef(0)
 
   // "armar" para colocar por click (desde Palette/List/BreakTools)
   const [placeActivity, setPlaceActivity] = useState(null)
-  const [moveBlockId, setMoveBlockId] = useState(null);
+  const [moveBlockId, setMoveBlockId] = useState(null)
 
-  // sensores: pointer + touch (mejor drag en móvil)
+  // sensores: pointer + touch
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor,   { activationConstraint: { delay: 80, tolerance: 8, // evita scroll durante gestos
-      } }),
+    useSensor(TouchSensor,   { activationConstraint: { delay: 80, tolerance: 8 } }),
   )
 
   // mido el alto del slot desde CSS var (cambia en responsive)
   const slotPxRef = useRef(36)
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
-  
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
+
   useEffect(() => {
     const read = () => {
       const v = getComputedStyle(document.documentElement).getPropertyValue('--slot-height').trim()
@@ -185,19 +200,16 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
     return () => window.removeEventListener('resize', onR)
   }, [])
 
-  // Detectar cambios en el tamaño de la ventana
   useEffect(() => {
-    function handleResize() {
-      setIsMobile(window.innerWidth <= 768)
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    const handle = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handle)
+    return () => window.removeEventListener('resize', handle)
   }, [])
 
   // helpers top/height
   const toTopPx = (slotIndex) => slotIndex * slotPxRef.current
   const toHeightPx = (startSlot, endSlot) => (endSlot - startSlot) * slotPxRef.current
-  
+
   // Para el resize, permitir hasta el slot extendido
   const maxSlotIndex = slots.length
 
@@ -236,12 +248,11 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
       const { activityId } = ev.detail || {}
       if (!activityId) return
       setBlocks(prev => prev.filter(b => b.activityId !== activityId))
-      if (selectedId && !blocks.find(b => b.id === selectedId)) setSelectedId(null)
+      setSelectedId(s => (prev => prev) && null)
     }
     window.addEventListener('delete-activity', onDeleteActivity)
     return () => window.removeEventListener('delete-activity', onDeleteActivity)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, blocks])
+  }, [])
 
   // borrar con tecla
   useEffect(() => {
@@ -259,7 +270,7 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
 
   // crear bloque
   function addBlockAt({ dayIndex, startSlot, durationSlots, activity }) {
-    const endSlot = Math.min(maxSlotIndex + 1, startSlot + durationSlots);
+    const endSlot = Math.min(maxSlotIndex + 1, startSlot + durationSlots)
     const newBlock = {
       id: crypto.randomUUID(),
       dayIndex,
@@ -270,27 +281,26 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
       activityId: activity.id,
       name: activity.name,
       color: activity.color,
-      // CORRECTO: sumar +1 a ambos índices
-      timeLabel: slotIndexToLabel(start, stepMin, startSlot + 1, endSlot + 1),
-    };
-    setBlocks(prev => [...prev, newBlock]);
+      timeLabel: slotIndexToLabel(start, stepMin, startSlot + 1, endSlot + 1), // 1-based
+    }
+    setBlocks(prev => [...prev, newBlock])
   }
 
-  // Al seleccionar un bloque, activar modo mover si ya está seleccionado
+  // seleccionar / mover
   function handleBlockSelect(id) {
-    setSelectedId(id);
-    setMoveBlockId(id);
-    setPlaceActivity(null);
+    setSelectedId(id)
+    setMoveBlockId(id)
+    setPlaceActivity(null)
   }
 
-  // click en celda -> colocar si está armado
+  // click en celda -> colocar o mover
   function handleCellClick(dayIndex, slotIndex) {
     if (moveBlockId) {
       setBlocks(prev => prev.map(b => {
-        if (b.id !== moveBlockId) return b;
-        const duration = b.endSlot - b.startSlot;
-        const newStart = slotIndex;
-        const newEnd = Math.min(maxSlotIndex + 1, newStart + duration);
+        if (b.id !== moveBlockId) return b
+        const duration = b.endSlot - b.startSlot
+        const newStart = slotIndex
+        const newEnd = Math.min(maxSlotIndex + 1, newStart + duration)
         return {
           ...b,
           dayIndex,
@@ -298,13 +308,12 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
           endSlot: newEnd,
           topPx: toTopPx(newStart),
           heightPx: toHeightPx(newStart, newEnd),
-          // CORRECTO: sumar +1 a ambos índices
           timeLabel: slotIndexToLabel(start, stepMin, newStart + 1, newEnd + 1),
-        };
-      }));
-      setSelectedId(moveBlockId);
-      setMoveBlockId(null);
-      return;
+        }
+      }))
+      setSelectedId(moveBlockId)
+      setMoveBlockId(null)
+      return
     }
     if (!placeActivity) return
     const defaultDur = Math.max(2, Math.round(60 / stepMin))
@@ -313,17 +322,15 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
     window.dispatchEvent(new CustomEvent('placed-activity'))
   }
 
-  // drag end (desde paleta/lista o mover bloque)
+  // dnd end (crear o mover)
   function onDragEnd(ev) {
     const { active, over } = ev
     if (!over) return
     const overData = over.data?.current
     if (!overData || overData.type !== 'cell') return
-
     const { dayIndex, slotIndex } = overData
     const activeData = active.data?.current
 
-    // soltar una actividad nueva
     if (activeData?.type === 'activity' || activeData?.type === 'palette-activity') {
       const activity = activeData.activity
       if (!activity) return
@@ -332,7 +339,6 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
       return
     }
 
-    // mover un bloque existente
     if (activeData?.type === 'block') {
       const id = activeData.blockId
       setBlocks(prev => prev.map(b => {
@@ -347,120 +353,115 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
           endSlot: newEnd,
           topPx: toTopPx(newStart),
           heightPx: toHeightPx(newStart, newEnd),
-          // Ajuste a 1-based para etiquetas
           timeLabel: slotIndexToLabel(start, stepMin, newStart + 1, newEnd + 1),
         }
       }))
       setSelectedId(id)
-      return
     }
   }
 
-  // resize (arrastre de manijas)
-  const columnRefs = useRef({})
-  const resizingCol = useRef(0)
-
-  function beginResize(id, handle) {
-    setResizing({ id, handle }) // top/bottom
-    const b = blocks.find(x => x.id === id)
+  /* ============
+     RESIZE REAL
+     ============ */
+  function onResizePointerDown(blockId, handle, e) {
+    // recordar columna del bloque a redimensionar
+    const b = blocks.find(x => x.id === blockId)
     if (b) resizingCol.current = b.dayIndex
-  }
-  function onMouseMove(e) {
-    if (!resizing) return
-    const colEl = columnRefs.current?.[resizingCol.current]
-    if (!colEl) return
-    const rect = colEl.getBoundingClientRect()
-    const y = e.clientY - rect.top
-    const slotIndex = Math.min(
-      Math.max(0, Math.round(y / slotPxRef.current)),
-      maxSlotIndex
-    )
-    setBlocks(prev => prev.map(b => {
-      if (b.id !== resizing.id) return b
-      if (resizing.handle === 'bottom') {
-        const minEnd = b.startSlot + 1
-        const newEnd = Math.max(minEnd, Math.min(slotIndex + 1, maxSlotIndex + 1))
-        return {
-          ...b,
-          endSlot: newEnd,
-          heightPx: toHeightPx(b.startSlot, newEnd),
-          // Ajuste a 1-based para etiquetas
-          timeLabel: slotIndexToLabel(start, stepMin, b.startSlot + 1, newEnd + 1),
-        }
-      } else {
-        const maxStart = b.endSlot - 1
-        const newStart = Math.min(maxStart, slotIndex)
-        return {
-          ...b,
-          startSlot: newStart,
-          topPx: toTopPx(newStart),
-          heightPx: toHeightPx(newStart, b.endSlot),
-          // Ajuste a 1-based para etiquetas
-          timeLabel: slotIndexToLabel(start, stepMin, newStart + 1, b.endSlot + 1),
-        }
-      }
-    }))
-  }
-  function endResize() { setResizing(null) }
 
-  // línea de almuerzo
+    setResizing({ id: blockId, handle })
+    // capturar el pointer para recibir los moves sin soltar
+    try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch {}
+  }
+
+  useEffect(() => {
+    if (!resizing) return
+
+    const onMove = (ev) => {
+      const clientY = ev.clientY ?? ev.touches?.[0]?.clientY
+      if (clientY == null) return
+      const colEl = columnRefs.current?.[resizingCol.current]
+      if (!colEl) return
+
+      const rect = colEl.getBoundingClientRect()
+      const y = clientY - rect.top
+      const slotIndex = clamp(Math.round(y / slotPxRef.current), 0, maxSlotIndex)
+
+      setBlocks(prev => prev.map(b => {
+        if (b.id !== resizing.id) return b
+        if (resizing.handle === 'bottom') {
+          const minEnd = b.startSlot + 1
+          const newEnd = clamp(slotIndex + 1, minEnd, maxSlotIndex + 1)
+          return {
+            ...b,
+            endSlot: newEnd,
+            heightPx: toHeightPx(b.startSlot, newEnd),
+            timeLabel: slotIndexToLabel(start, stepMin, b.startSlot + 1, newEnd + 1),
+          }
+        } else {
+          const maxStart = b.endSlot - 1
+          const newStart = clamp(slotIndex, 0, maxStart)
+          return {
+            ...b,
+            startSlot: newStart,
+            topPx: toTopPx(newStart),
+            heightPx: toHeightPx(newStart, b.endSlot),
+            timeLabel: slotIndexToLabel(start, stepMin, newStart + 1, b.endSlot + 1),
+          }
+        }
+      }))
+    }
+
+    const onUp = () => setResizing(null)
+
+    window.addEventListener('pointermove', onMove, { passive: true })
+    window.addEventListener('pointerup', onUp, { passive: true })
+    window.addEventListener('pointercancel', onUp, { passive: true })
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+    }
+  }, [resizing, start, stepMin, maxSlotIndex])
+
+  // línea/área de almuerzo
   const lunchSlotIndex = useMemo(() => {
     if (!lunchEnabled) return null
-    // Calcular el slot basado en la hora real
     const [sh, sm] = start.split(':').map(Number)
     const [lh, lm] = lunchStart.split(':').map(Number)
     const base = sh * 60 + sm
     const lunch = lh * 60 + lm
     const diff = lunch - base
     const slot = Math.round(diff / stepMin)
-    return Math.max(0, Math.min(slots.length - 1, slot))
+    return clamp(slot, 0, slots.length - 1)
   }, [lunchEnabled, lunchStart, start, stepMin, slots.length])
 
   const lunchEndSlotIndex = useMemo(() => {
     if (!lunchEnabled) return null
-    // Calcular el slot basado en la hora real
     const [sh, sm] = start.split(':').map(Number)
     const [lh, lm] = lunchEnd.split(':').map(Number)
     const base = sh * 60 + sm
     const lunch = lh * 60 + lm
     const diff = lunch - base
     const slot = Math.round(diff / stepMin)
-    return Math.max(0, Math.min(slots.length - 1, slot))
+    return clamp(slot, 0, slots.length - 1)
   }, [lunchEnabled, lunchEnd, start, stepMin, slots.length])
 
   const isPlacementArmed = !!placeActivity
 
-  // columnas: responsive - desktop sin scroll, mobile con scroll sincronizado
-  const headerCols = isMobile
-    ? `minmax(48px, 70px) repeat(${days.length}, minmax(160px, 1fr))`
-    : `minmax(80px, 120px) repeat(${days.length}, minmax(140px, 1fr))`
+  // columnas: responsive
   const leftColWidth = isMobile ? 'minmax(54px, 78px)' : 'minmax(68px, 92px)'
-  const dayColWidth = isMobile ? 'minmax(160px, 1fr)' : 'minmax(140px, 1fr)'
+  const dayColWidth  = isMobile ? 'minmax(160px, 1fr)' : 'minmax(140px, 1fr)'
   const rightHeaderCols = `repeat(${days.length}, ${dayColWidth})`
-
-  
 
   return (
     <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-      {/* children: normalmente ActivityList; queda cerca de la grilla en móvil */}
       {children}
 
-      <div
-        className="w-full border border-gray-200 rounded-xl bg-white overflow-hidden"
-        onMouseMove={onMouseMove}
-        onMouseUp={endResize}
-        onTouchMove={(e) => {
-          if (!resizing) return
-          const t = e.touches[0]
-          if (!t) return
-          onMouseMove({ clientY: t.clientY })
-        }}
-        onTouchEnd={endResize}
-      >
-        {/* Contenedor principal con scroll sincronizado solo en móvil */}
+      <div className="w-full border border-gray-200 rounded-xl bg-white overflow-hidden">
+        {/* Contenedor principal */}
         <div className="relative">
           <div className="grid" style={{ gridTemplateColumns: `${leftColWidth} 1fr` }}>
-            {/* Columna fija de horas (no scrollea horizontal) */}
+            {/* Columna fija de horas */}
             <div className="relative">
               <div className="sticky top-0 z-30 bg-white p-3 text-xs sm:text-sm font-medium text-gray-600 border-b border-gray-100">
                 {isPlacementArmed ? 'Modo colocar' : 'Hora'}
@@ -471,29 +472,27 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
                   const base = sh * 60 + sm
                   const slotTime = base + (i * stepMin)
                   const nextSlotTime = base + ((i + 1) * stepMin)
-                  
                   const h = String(Math.floor(slotTime / 60)).padStart(2, '0')
                   const m = String(slotTime % 60).padStart(2, '0')
                   const nextH = String(Math.floor(nextSlotTime / 60)).padStart(2, '0')
                   const nextM = String(nextSlotTime % 60).padStart(2, '0')
-                  
                   const timeLabel = `${h}:${m}-${nextH}:${nextM}`
-                  
                   return (
                     <div key={i} className="border-t border-gray-100 text-[10px] sm:text-xs text-gray-500 h-[var(--slot-height)] flex items-start justify-end pr-2">
                       {(i % Math.round(60 / stepMin) === 0) && (<span>{timeLabel}</span>)}
                     </div>
                   )
                 })}
-                {/* Línea y etiqueta del fin extendido (p.ej., 18:30) */}
-                <div className="absolute left-0 right-0 text-[10px] sm:text-xs text-gray-500" style={{ top: toTopPx(slots.length) }}>
+                {/* línea del fin extendido */}
+                <div className="absolute left-0 right-0 text-[10px] sm:text-xs text-gray-500" style={{ top: slots.length * slotPxRef.current }}>
                   <div className="absolute left-0 right-0 border-t border-gray-200" />
                 </div>
-                {/* Etiqueta dentro de la celda extendida */}
+                {/* Etiqueta final */}
                 <div className="border-t border-gray-100 text-[10px] sm:text-xs text-gray-500 h-[var(--slot-height)] flex items-start justify-end pr-2">
                   <span>{endExtendedLabel}</span>
                 </div>
-                {/* ya extendemos, no mostramos marca de fracción */}
+
+                {/* almuerzo (guías) */}
                 {lunchSlotIndex != null && (
                   <div className="absolute left-0 right-0 border-t-2 border-rose-300 pointer-events-none" style={{ top: toTopPx(lunchSlotIndex) }} />
                 )}
@@ -506,7 +505,7 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
               </div>
             </div>
 
-            {/* Área scrolleable (cabecera de días + columnas por día) */}
+            {/* Área de días */}
             <div className="relative overflow-x-auto col-scroll">
               <div className="grid sticky top-0 z-10 bg-white" style={{ gridTemplateColumns: rightHeaderCols }}>
                 {days.map(d => (
@@ -533,9 +532,7 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
                         isPlacementArmed={isPlacementArmed}
                       />
                     ))}
-
-                    {/* extendido: sin marca adicional */}
-                    {/* Celda extra para el período extendido */}
+                    {/* slot extendido */}
                     <Cell
                       key="extended"
                       dayIndex={dayIndex}
@@ -552,8 +549,8 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
                           block={b}
                           selected={selectedId === b.id}
                           onSelect={handleBlockSelect}
-                          onResizeStartTop={(id) => beginResize(id, 'top')}
-                          onResizeStartBottom={(id) => beginResize(id, 'bottom')}
+                          onResizePointerDown={onResizePointerDown}
+                          onDelete={(id) => setBlocks(prev => prev.filter(x => x.id !== id))}
                         />
                       ))}
                   </div>
@@ -562,7 +559,7 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
             </div>
           </div>
         </div>
-        </div>
+      </div>
 
       {isPlacementArmed && (
         <div
