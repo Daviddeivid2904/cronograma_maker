@@ -115,8 +115,9 @@ export default function SchedulePoster({
   // Segmentar por visibleStep
   const segCount = Math.ceil((hourEnd - anchor) / visibleStep);
   const availH   = contentH - headerH - daysHeaderH - legendH;
-  const segPx    = Math.max(100, Math.min(140, Math.floor(availH / segCount)));
-  const gridH    = segPx * segCount;
+  // Adaptar altura de segmento al espacio disponible SIN escalar el paso
+  const segPx    = Math.max(1, availH / segCount);
+  const gridH    = availH;
 
   // ANCLAR la grilla justo debajo de la cabecera de días (sin gap)
   const gridTop  = margin + headerH + daysHeaderH;
