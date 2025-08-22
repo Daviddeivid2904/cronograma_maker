@@ -65,6 +65,8 @@ export default function App() {
   return (
     <div className="max-w-6xl mx-auto p-5 space-y-5">
       <header className="flex items-center justify-between">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5238026837919071"
+     crossorigin="anonymous"></script>
         <div>
           <h1 className="text-2xl font-bold">Planificador semanal</h1>
           <p className="text-gray-600">Grilla por celdas: arrastrá, estirá y personalizá.</p>
