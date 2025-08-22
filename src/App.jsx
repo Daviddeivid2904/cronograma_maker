@@ -69,7 +69,7 @@ export default function App() {
      crossorigin="anonymous"></script>
         <div>
           <h1 className="text-2xl font-bold">Planificador semanal</h1>
-          <p className="text-gray-600">Grilla por celdas: arrastrá, estirá y personalizá.</p>
+          <p className="text-gray-600">Grilla por celdas: arrastrá, estirá,personalizá y descargá.</p>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -78,15 +78,6 @@ export default function App() {
           >
             Descargar imagen
           </button>
-          <a
-            href="https://www.linkedin.com/in/david-lekerman/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-indigo-600 hover:underline"
-            title="LinkedIn de David Lekerman"
-          >
-            by David Lekerman
-          </a>
         </div>
       </header>
 
@@ -127,7 +118,15 @@ export default function App() {
       </div>
 
       <footer className="text-center text-xs text-gray-500 pt-4">
-        Próximamente: guardar en LocalStorage y exportar a PDF.
+      <a
+            href="https://www.linkedin.com/in/david-lekerman/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-indigo-600 hover:underline"
+            title="LinkedIn de David Lekerman"
+          >
+            by David Lekerman
+          </a>
       </footer>
     </div>
   )

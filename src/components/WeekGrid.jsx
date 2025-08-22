@@ -124,7 +124,7 @@ function DraggableBlock({
 
         {/* manija superior (drag directo) */}
         <div
-          className="absolute -top-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
+          className="absolute -top-1 left-1/2 -translate-x-1/2 rounded-md cursor-ns-resize bg-white/80 border"
           onPointerDown={(e) => { 
             e.preventDefault(); 
             e.stopPropagation(); 
@@ -141,7 +141,6 @@ function DraggableBlock({
             // Hacer más grande en móvil
             width: isMobile ? '32px' : '28px',
             height: isMobile ? '8px' : '8px',
-            marginLeft: isMobile ? '-16px' : '-14px',
             backgroundColor: isMobile ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.8)',
             border: isMobile ? '2px solid rgba(59,130,246,0.6)' : '1px solid rgba(0,0,0,0.2)'
           }}
@@ -164,7 +163,7 @@ function DraggableBlock({
 
         {/* manija inferior (drag directo) */}
         <div
-          className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
+          className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-md cursor-ns-resize bg-white/80 border"
           onPointerDown={(e) => { 
             e.preventDefault(); 
             e.stopPropagation(); 
@@ -181,7 +180,6 @@ function DraggableBlock({
             // Hacer más grande en móvil
             width: isMobile ? '32px' : '28px',
             height: isMobile ? '8px' : '8px',
-            marginLeft: isMobile ? '-16px' : '-14px',
             backgroundColor: isMobile ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.8)',
             border: isMobile ? '2px solid rgba(59,130,246,0.6)' : '1px solid rgba(0,0,0,0.2)'
           }}
