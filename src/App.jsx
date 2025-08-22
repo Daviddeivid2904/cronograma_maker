@@ -87,8 +87,8 @@ export default function App() {
           </a>
         </div>
       </header>
-
       <SettingsBar value={settings} onChange={setSettings} onCreateBreakCard={handleCreateBreakCard} />
+
 
       <ActivityPalette onAdd={handleAddActivity} />
 

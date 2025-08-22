@@ -141,7 +141,7 @@ export default function SchedulePoster({
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* Fondo */}
-      <rect width={width} height={height} fill={colors.background} />
+      <rect width={width} height={height} fill="#ffffff" />
 
       {/* Header centrado */}
       <g transform={`translate(${width/2}, ${margin})`}>
@@ -182,7 +182,7 @@ export default function SchedulePoster({
               y={k * segPx} 
               width={leftColW} 
               height={segPx} 
-              fill="#f3f4f6" 
+              fill={colors.headerBg} 
               stroke={borderColor} 
               strokeWidth="1.5" 
             />

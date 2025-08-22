@@ -46,28 +46,28 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
       <div className="rounded-xl border bg-white p-3 grid grid-cols-1 md:grid-cols-5 gap-3">
         <div>
           <label className="block text-xs text-gray-500 mb-1">Día de inicio</label>
-          <select className="w-full border rounded-lg px-2 py-2" value={startDay} onChange={e=>setStartDay(e.target.value)}>
+          <select className="w-full border rounded-lg px-2 py-3 sm:py-2" value={startDay} onChange={e=>setStartDay(e.target.value)}>
             {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
         <div>
           <label className="block text-xs text-gray-500 mb-1">Día de fin</label>
-          <select className="w-full border rounded-lg px-2 py-2" value={endDay} onChange={e=>setEndDay(e.target.value)}>
+          <select className="w-full border rounded-lg px-2 py-3 sm:py-2" value={endDay} onChange={e=>setEndDay(e.target.value)}>
             {endOptions.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
         <div>
           <label className="block text-xs text-gray-500 mb-1">Desde</label>
-          <input type="time" className="w-full border rounded-lg px-2 py-2" value={start} onChange={e=>setStart(e.target.value)} />
+          <input type="time" className="w-full border rounded-lg px-2 py-3 sm:py-2" value={start} onChange={e=>setStart(e.target.value)} />
         </div>
         <div>
           <label className="block text-xs text-gray-500 mb-1">Hasta</label>
-          <input type="time" className="w-full border rounded-lg px-2 py-2" value={end} onChange={e=>setEnd(e.target.value)} />
+          <input type="time" className="w-full border rounded-lg px-2 py-3 sm:py-2" value={end} onChange={e=>setEnd(e.target.value)} />
         </div>
         <div>
           <label className="block text-xs text-gray-500 mb-1">Paso (min)</label>
           <select
-            className="w-full border rounded-lg px-2 py-2"
+            className="w-full border rounded-lg px-2 py-3 sm:py-2"
             value={stepMin}
             onChange={e => setStepMin(Number(e.target.value))}
           >
