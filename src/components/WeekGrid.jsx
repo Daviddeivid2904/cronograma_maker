@@ -33,6 +33,7 @@ function DraggableBlock({
   onUpdateTime,          // << NUEVO: actualizar hora
   stepMin,               // << NUEVO: paso de tiempo para cálculos
   start,                 // << NUEVO: hora de inicio del día
+  isMobile,              // << NUEVO: si estamos en móvil
 }) {
   const [showEditModal, setShowEditModal] = useState(false)
   const [subtitle, setSubtitle] = useState(block.subtitle || '')
@@ -124,10 +125,33 @@ function DraggableBlock({
         {/* manija superior (drag directo) */}
         <div
           className="absolute -top-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
-          onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizePointerDown(block.id, 'top', e) }}
+          onPointerDown={(e) => { 
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            onResizePointerDown(block.id, 'top', e) 
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onResizePointerDown(block.id, 'top', e);
+          }}
           title="Redimensionar"
-          style={{ touchAction: 'none' }}
-        />
+          style={{ 
+            touchAction: 'none',
+            // Hacer más grande en móvil
+            width: isMobile ? '32px' : '28px',
+            height: isMobile ? '8px' : '8px',
+            marginLeft: isMobile ? '-16px' : '-14px',
+            backgroundColor: isMobile ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.8)',
+            border: isMobile ? '2px solid rgba(59,130,246,0.6)' : '1px solid rgba(0,0,0,0.2)'
+          }}
+        >
+          {isMobile && (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+            </div>
+          )}
+        </div>
 
         {/* contenido */}
         <div className="px-2 py-2 text-xs leading-4 select-none text-center">
@@ -141,10 +165,33 @@ function DraggableBlock({
         {/* manija inferior (drag directo) */}
         <div
           className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
-          onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizePointerDown(block.id, 'bottom', e) }}
+          onPointerDown={(e) => { 
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            onResizePointerDown(block.id, 'bottom', e) 
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onResizePointerDown(block.id, 'bottom', e);
+          }}
           title="Redimensionar"
-          style={{ touchAction: 'none' }}
-        />
+          style={{ 
+            touchAction: 'none',
+            // Hacer más grande en móvil
+            width: isMobile ? '32px' : '28px',
+            height: isMobile ? '8px' : '8px',
+            marginLeft: isMobile ? '-16px' : '-14px',
+            backgroundColor: isMobile ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.8)',
+            border: isMobile ? '2px solid rgba(59,130,246,0.6)' : '1px solid rgba(0,0,0,0.2)'
+          }}
+        >
+          {isMobile && (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal de edición de subtítulo */}
@@ -310,15 +357,24 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
   const [placeActivity, setPlaceActivity] = useState(null)
   const [moveBlockId, setMoveBlockId] = useState(null)
 
-  // sensores: pointer + touch
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor,   { activationConstraint: { delay: 80, tolerance: 8 } }),
-  )
-
   // mido el alto del slot desde CSS var (cambia en responsive)
   const slotPxRef = useRef(36)
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
+
+  // sensores: pointer + touch
+  const sensors = useSensors(
+    useSensor(PointerSensor, { 
+      activationConstraint: { 
+        distance: isMobile ? 8 : 4 
+      } 
+    }),
+    useSensor(TouchSensor,   { 
+      activationConstraint: { 
+        delay: isMobile ? 120 : 80, 
+        tolerance: isMobile ? 12 : 8 
+      } 
+    }),
+  )
 
   useEffect(() => {
     const read = () => {
@@ -547,19 +603,31 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
      RESIZE REAL
      ============ */
   function onResizePointerDown(blockId, handle, e) {
+    // Prevenir que el DnD se active durante el resize
+    e.preventDefault()
+    e.stopPropagation()
+    
     // recordar columna del bloque a redimensionar
     const b = blocks.find(x => x.id === blockId)
     if (b) resizingCol.current = b.dayIndex
 
     setResizing({ id: blockId, handle })
+    
     // capturar el pointer para recibir los moves sin soltar
-    try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch {}
+    try { 
+      if (e.pointerId) {
+        e.currentTarget.setPointerCapture?.(e.pointerId) 
+      }
+    } catch {}
   }
 
   useEffect(() => {
     if (!resizing) return
 
     const onMove = (ev) => {
+      // Prevenir scroll durante el resize
+      ev.preventDefault()
+      
       const clientY = ev.clientY ?? ev.touches?.[0]?.clientY
       if (clientY == null) return
       const colEl = columnRefs.current?.[resizingCol.current]
@@ -781,6 +849,7 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
                           }}
                           stepMin={stepMin}
                           start={start}
+                          isMobile={isMobile}
                         />
                       ))}
                   </div>
