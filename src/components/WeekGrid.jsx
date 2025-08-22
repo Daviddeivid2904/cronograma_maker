@@ -28,7 +28,36 @@ function DraggableBlock({
   onSelect,
   onResizePointerDown,   // (id, 'top'|'bottom', event)
   onDelete,
+  onUpdateSubtitle,      // << NUEVO: actualizar subtítulo
+  onUpdateTitle,         // << NUEVO: actualizar título
+  onUpdateTime,          // << NUEVO: actualizar hora
+  stepMin,               // << NUEVO: paso de tiempo para cálculos
+  start,                 // << NUEVO: hora de inicio del día
 }) {
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [subtitle, setSubtitle] = useState(block.subtitle || '')
+  const [title, setTitle] = useState(block.name || '')
+  
+  // Extraer horas actuales del timeLabel
+  const timeMatch = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/)
+  const [startTime, setStartTime] = useState(() => {
+    const match = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/)
+    return match ? match[1] : '09:00'
+  })
+  const [endTime, setEndTime] = useState(() => {
+    const match = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/)
+    return match ? match[2] : '10:00'
+  })
+
+  // Actualizar horas cuando cambia el block
+  useEffect(() => {
+    const match = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/)
+    if (match) {
+      setStartTime(match[1])
+      setEndTime(match[2])
+    }
+  }, [block.timeLabel])
+
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `block-${block.id}`,
     data: { type: 'block', blockId: block.id },
@@ -41,58 +70,161 @@ function DraggableBlock({
     touchAction: 'none',
   }
 
+  const handleSaveChanges = () => {
+    onUpdateSubtitle?.(block.id, subtitle)
+    onUpdateTitle?.(block.id, title)
+    onUpdateTime?.(block.id, startTime, endTime)
+    setShowEditModal(false)
+  }
+
   return (
-    <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      className={`absolute left-1 right-1 rounded-lg shadow-sm border
-                  ${selected ? 'ring-2 ring-indigo-500 ring-offset-2' : 'border-gray-200'}
-                  ${isDragging ? 'opacity-80' : 'opacity-100'}`}
-      onClick={(e) => { e.stopPropagation(); onSelect(block.id) }}
-      style={{
-        top: block.topPx,
-        height: block.heightPx,
-        backgroundColor: block.color,
-        color: '#0f172a',
-        ...style,
-      }}
-    >
-      {/* botón eliminar */}
-      <button
-        type="button"
-        className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-white border text-gray-500 hover:text-red-600 hover:border-red-500 shadow-sm"
-        onPointerDown={(e)=>e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); onDelete?.(block.id) }}
-        aria-label="Eliminar bloque"
-        title="Eliminar"
-        style={{ touchAction: 'none' }}
-      >
-        <span className="text-sm leading-none">×</span>
-      </button>
-
-      {/* manija superior (drag directo) */}
+    <>
       <div
-        className="absolute -top-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
-        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizePointerDown(block.id, 'top', e) }}
-        title="Redimensionar"
-        style={{ touchAction: 'none' }}
-      />
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
+        className={`absolute left-1 right-1 rounded-lg shadow-sm border
+                    ${selected ? 'ring-2 ring-indigo-500 ring-offset-2' : 'border-gray-200'}
+                    ${isDragging ? 'opacity-80' : 'opacity-100'}`}
+        onClick={(e) => { e.stopPropagation(); onSelect(block.id) }}
+        style={{
+          top: block.topPx,
+          height: block.heightPx,
+          backgroundColor: block.color,
+          color: '#0f172a',
+          ...style,
+        }}
+      >
+        {/* botón editar subtítulo */}
+        <button
+          type="button"
+          className="absolute top-1 left-1 w-5 h-5 flex items-center justify-center rounded-full bg-white/80 border text-gray-600 hover:text-blue-600 hover:border-blue-500 shadow-sm"
+          onPointerDown={(e)=>e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); setShowEditModal(true) }}
+          aria-label="Editar actividad"
+          title="Editar título y subtítulo"
+          style={{ touchAction: 'none' }}
+        >
+          <span className="text-xs">✏️</span>
+        </button>
 
-      {/* contenido */}
-      <div className="px-2 py-2 text-xs leading-4 select-none">
-        <div className="font-semibold truncate">{block.name}</div>
-        <div className="opacity-80">{block.timeLabel}</div>
+        {/* botón eliminar */}
+        <button
+          type="button"
+          className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-white border text-gray-500 hover:text-red-600 hover:border-red-500 shadow-sm"
+          onPointerDown={(e)=>e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onDelete?.(block.id) }}
+          aria-label="Eliminar bloque"
+          title="Eliminar"
+          style={{ touchAction: 'none' }}
+        >
+          <span className="text-sm leading-none">×</span>
+        </button>
+
+        {/* manija superior (drag directo) */}
+        <div
+          className="absolute -top-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
+          onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizePointerDown(block.id, 'top', e) }}
+          title="Redimensionar"
+          style={{ touchAction: 'none' }}
+        />
+
+        {/* contenido */}
+        <div className="px-2 py-2 text-xs leading-4 select-none text-center">
+          <div className="font-semibold truncate">{block.name}</div>
+          {block.subtitle && (
+            <div className="opacity-70 text-[10px] leading-3 mt-0.5 truncate">{block.subtitle}</div>
+          )}
+          <div className="opacity-80">{block.timeLabel}</div>
+        </div>
+
+        {/* manija inferior (drag directo) */}
+        <div
+          className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
+          onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizePointerDown(block.id, 'bottom', e) }}
+          title="Redimensionar"
+          style={{ touchAction: 'none' }}
+        />
       </div>
 
-      {/* manija inferior (drag directo) */}
-      <div
-        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-2 rounded-md cursor-ns-resize bg-white/80 border"
-        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onResizePointerDown(block.id, 'bottom', e) }}
-        title="Redimensionar"
-        style={{ touchAction: 'none' }}
-      />
-    </div>
+      {/* Modal de edición de subtítulo */}
+      {showEditModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <div className="bg-white rounded-lg p-4 w-full max-w-sm">
+            <h3 className="text-lg font-semibold mb-3">Editar actividad</h3>
+            <p className="text-sm text-gray-600 mb-3">
+              Modifica el título y agrega información adicional como "Teórica", "Práctica", profesor, etc.
+            </p>
+            
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Nombre de la actividad"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hora inicio</label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    step={stepMin * 60}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hora fin</label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    step={stepMin * 60}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subtítulo (opcional)</label>
+                <input
+                  type="text"
+                  value={subtitle}
+                  onChange={(e) => setSubtitle(e.target.value)}
+                  placeholder="Ej: Teórica - Prof. García"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveChanges}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -213,6 +345,53 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
   // Para el resize, permitir hasta el slot extendido
   const maxSlotIndex = slots.length
 
+  // Actualizar bloques cuando cambia el paso de tiempo
+  useEffect(() => {
+    if (blocks.length === 0) return
+    
+    setBlocks(prevBlocks => prevBlocks.map(block => {
+      // Extraer las horas actuales del timeLabel
+      const timeMatch = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/)
+      if (!timeMatch) return block
+      
+      const startTime = timeMatch[1]
+      const endTime = timeMatch[2]
+      
+      // Convertir a minutos desde el inicio del día
+      const [startH, startM] = startTime.split(':').map(Number)
+      const [endH, endM] = endTime.split(':').map(Number)
+      const [baseH, baseM] = start.split(':').map(Number)
+      
+      const startMinutes = startH * 60 + startM
+      const endMinutes = endH * 60 + endM
+      const baseMinutes = baseH * 60 + baseM
+      
+      // Calcular slots basados en el nuevo paso
+      const newStartSlot = Math.round((startMinutes - baseMinutes) / stepMin)
+      const newEndSlot = Math.round((endMinutes - baseMinutes) / stepMin)
+      
+      // Asegurar que los slots estén dentro de los límites
+      const clampedStartSlot = Math.max(0, Math.min(newStartSlot, maxSlotIndex - 1))
+      const clampedEndSlot = Math.max(clampedStartSlot + 1, Math.min(newEndSlot, maxSlotIndex))
+      
+      // Recalcular posición y altura
+      const newTopPx = toTopPx(clampedStartSlot)
+      const newHeightPx = toHeightPx(clampedStartSlot, clampedEndSlot)
+      
+      // Generar nuevo timeLabel
+      const newTimeLabel = slotIndexToLabel(start, stepMin, clampedStartSlot + 1, clampedEndSlot + 1)
+      
+      return {
+        ...block,
+        startSlot: clampedStartSlot,
+        endSlot: clampedEndSlot,
+        topPx: newTopPx,
+        heightPx: newHeightPx,
+        timeLabel: newTimeLabel,
+      }
+    }))
+  }, [stepMin, start, maxSlotIndex])
+
   // escuchar "arm-place-activity" y "cancel-place-activity"
   useEffect(() => {
     function onArm(ev) { setPlaceActivity(ev.detail?.activity || null) }
@@ -258,6 +437,8 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
   useEffect(() => {
     function onKey(e) {
       if (!selectedId) return
+      // No borrar si hay un modal abierto
+      if (document.querySelector('.fixed.inset-0.bg-black\\/50')) return
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault()
         setBlocks(prev => prev.filter(b => b.id !== selectedId))
@@ -281,8 +462,10 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
       activityId: activity.id,
       name: activity.name,
       color: activity.color,
+      subtitle: '', // << NUEVO: campo para subtítulos
       timeLabel: slotIndexToLabel(start, stepMin, startSlot + 1, endSlot + 1), // 1-based
     }
+    
     setBlocks(prev => [...prev, newBlock])
   }
 
@@ -551,6 +734,53 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
                           onSelect={handleBlockSelect}
                           onResizePointerDown={onResizePointerDown}
                           onDelete={(id) => setBlocks(prev => prev.filter(x => x.id !== id))}
+                          onUpdateSubtitle={(id, newSubtitle) => {
+                            setBlocks(prev => prev.map(b => b.id === id ? { ...b, subtitle: newSubtitle } : b))
+                          }}
+                          onUpdateTitle={(id, newTitle) => {
+                            setBlocks(prev => prev.map(b => b.id === id ? { ...b, name: newTitle } : b))
+                          }}
+                          onUpdateTime={(id, newStartTime, newEndTime) => {
+                            
+                            setBlocks(prev => prev.map(b => {
+                              if (b.id !== id) return b
+                              
+                              // Convertir horas a minutos
+                              const [startH, startM] = newStartTime.split(':').map(Number)
+                              const [endH, endM] = newEndTime.split(':').map(Number)
+                              const [baseH, baseM] = start.split(':').map(Number)
+                              
+                              const startMinutes = startH * 60 + startM
+                              const endMinutes = endH * 60 + endM
+                              const baseMinutes = baseH * 60 + baseM
+                              
+                              // Calcular slots basados en el paso actual, pero sin redondear
+                              const newStartSlot = (startMinutes - baseMinutes) / stepMin
+                              const newEndSlot = (endMinutes - baseMinutes) / stepMin
+                              
+                              // Asegurar que los slots estén dentro de los límites
+                              const clampedStartSlot = Math.max(0, Math.min(newStartSlot, maxSlotIndex - 1))
+                              const clampedEndSlot = Math.max(clampedStartSlot + 1, Math.min(newEndSlot, maxSlotIndex))
+                              
+                              // Recalcular posición y altura
+                              const newTopPx = toTopPx(clampedStartSlot)
+                              const newHeightPx = toHeightPx(clampedStartSlot, clampedEndSlot)
+                              
+                              // Generar timeLabel con las horas exactas que el usuario ingresó
+                              const newTimeLabel = `${newStartTime}–${newEndTime}`
+                              
+                              return {
+                                ...b,
+                                startSlot: clampedStartSlot,
+                                endSlot: clampedEndSlot,
+                                topPx: newTopPx,
+                                heightPx: newHeightPx,
+                                timeLabel: newTimeLabel,
+                              }
+                            }))
+                          }}
+                          stepMin={stepMin}
+                          start={start}
                         />
                       ))}
                   </div>

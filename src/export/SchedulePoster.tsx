@@ -281,12 +281,21 @@ export default function SchedulePoster({
           const { size: titleSize, lines: titleLines } =
             fitTitle(String(it.title || ""), usableW, idealTitle, 18, 2);
 
+          // Subtítulo (si existe)
+          const hasSubtitle = it.subtitle && it.subtitle.trim();
+          const subtitleSize = hasSubtitle ? Math.min(Math.max(16, Math.floor(h * 0.18)), 24) : 0;
+          const { size: actualSubtitleSize, lines: subtitleLines } = hasSubtitle ? 
+            fitTitle(String(it.subtitle || ""), usableW, subtitleSize, 14, 1) : 
+            { size: 0, lines: [] };
+
           const timeSize = Math.min(Math.max(14, Math.floor(h * 0.20)), 28);
           const gap = Math.max(6, Math.floor(h * 0.07));
+          const subtitleGap = hasSubtitle ? Math.max(6, Math.floor(h * 0.08)) : 0;
 
           // Alto total de texto para centrar vertical
           const titleBlockH = titleLines.length * titleSize + (titleLines.length - 1) * 4;
-          const totalTextH = titleBlockH + gap + timeSize;
+          const subtitleBlockH = hasSubtitle ? (subtitleLines.length * actualSubtitleSize + (subtitleLines.length - 1) * 2) : 0;
+          const totalTextH = titleBlockH + (hasSubtitle ? subtitleGap + subtitleBlockH : 0) + gap + timeSize;
           const baseY = y + (h - totalTextH) / 2;
 
           const cx = x + w / 2;
@@ -313,12 +322,35 @@ export default function SchedulePoster({
             );
           });
 
+          // Subtítulo (si existe), centrado y más pequeño
+          if (hasSubtitle) {
+            subtitleLines.forEach((ln, iLine) => {
+              const ly = baseY + titleBlockH + subtitleGap + actualSubtitleSize * (iLine + 1) + 2 * iLine;
+              svgChildren.push(
+                <text
+                  key={`s-${idx}-${iLine}`}
+                  x={cx}
+                  y={ly}
+                  textAnchor="middle"
+                  dominantBaseline="alphabetic"
+                  fontFamily="Inter, system-ui, Arial"
+                  fontWeight="500"
+                  fontSize={actualSubtitleSize}
+                  fill={fg}
+                  opacity="0.8"
+                >
+                  {ln}
+                </text>
+              );
+            });
+          }
+
           // Horario, centrado y un poco más chico
           svgChildren.push(
             <text
               key={`time-${idx}`}
               x={cx}
-              y={baseY + titleBlockH + gap + timeSize}
+              y={baseY + titleBlockH + (hasSubtitle ? subtitleGap + subtitleBlockH : 0) + gap + timeSize}
               textAnchor="middle"
               dominantBaseline="alphabetic"
               fontFamily="Inter, system-ui, Arial"

@@ -10,6 +10,7 @@ export type ScheduleData = {
     start: string;                // "HH:MM"
     end: string;                  // "HH:MM"
     title: string;
+    subtitle?: string;            // << NUEVO: subtítulo opcional para cada actividad
     teacher?: string;
     room?: string;
     color: string;

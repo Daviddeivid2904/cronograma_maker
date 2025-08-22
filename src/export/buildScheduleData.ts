@@ -10,6 +10,7 @@ export function buildScheduleDataFromState(
     activityId: string;
     name: string;
     color: string;
+    subtitle?: string; // << NUEVO: campo opcional para subtítulos
     timeLabel: string; // "HH:MM–HH:MM"
   }>,
   config: {
@@ -28,11 +29,13 @@ export function buildScheduleDataFromState(
     const timeMatch = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/);
     const startTime = timeMatch ? timeMatch[1] : '08:00';
     const endTime = timeMatch ? timeMatch[2] : '09:00';
+    
     return {
       dayIndex: block.dayIndex,
       start: startTime,
       end: endTime,
       title: block.name,
+      subtitle: block.subtitle || undefined, // << NUEVO: incluir subtítulo en exportación
       color: block.color,
     };
   });
