@@ -87,8 +87,6 @@ export default function App() {
           </a>
         </div>
       </header>
-      <SettingsBar value={settings} onChange={setSettings} onCreateBreakCard={handleCreateBreakCard} />
-
 
       <ActivityPalette onAdd={handleAddActivity} />
 
@@ -103,6 +101,8 @@ export default function App() {
           onDelete={handleDeleteActivity}
         />
       </WeekGrid>
+
+      <SettingsBar value={settings} onChange={setSettings} onCreateBreakCard={handleCreateBreakCard} />
 
       {/* Panel de exportación */}
       {showExportPanel && (

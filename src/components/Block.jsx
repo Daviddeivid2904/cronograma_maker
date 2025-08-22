@@ -11,7 +11,7 @@ import { CSS } from '@dnd-kit/utilities'
  * - onResizeStart(e, id, 'top'|'bottom')
  * - onSelect(id)
  * - onDelete(id)
- * - onArmMove(id)    // << NUEVO: tocar el bloque para “armar teletransporte”
+ * - onArmMove(id)    // << NUEVO: tocar el bloque para "armar teletransporte"
  */
 export default function Block({ block, isResizing, isSelected, onResizeStart, onSelect, onDelete, onArmMove }) {
   const {
@@ -36,6 +36,13 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
     borderRadius: '0.5rem',
   }
 
+  // Función para manejar el resize en móvil
+  const handleResizeStart = (e, direction) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onResizeStart(e, block.id, direction)
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -49,7 +56,7 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
         {...attributes}
         {...listeners}
         onMouseDown={(e) => { e.stopPropagation(); onSelect?.(block.id) }}
-        onClick={(e) => { e.stopPropagation(); onArmMove?.(block.id) }}   // << TAP para “teletransportar”
+        onClick={(e) => { e.stopPropagation(); onArmMove?.(block.id) }}   // << TAP para "teletransportar"
         title="Tocar para mover a otra casilla; arrastrar para reubicar"
       />
 
@@ -70,21 +77,37 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
         ×
       </button>
 
-      {/* Handle superior (resize arriba) */}
+      {/* Handle superior (resize arriba) - Separado del drag */}
       <div
-        className="absolute top-0 left-0 right-0 h-2 cursor-ns-resize z-[2]"
-        onMouseDown={(e) => onResizeStart(e, block.id, 'top')}
-        style={{ background: 'rgba(0,0,0,0.15)', borderTopLeftRadius: 8, borderTopRightRadius: 8 }}
+        className="absolute top-0 left-0 right-0 h-3 cursor-ns-resize z-[4] touch-none"
+        onMouseDown={(e) => handleResizeStart(e, 'top')}
+        onTouchStart={(e) => handleResizeStart(e, 'top')}
+        style={{ 
+          background: 'rgba(0,0,0,0.15)', 
+          borderTopLeftRadius: 8, 
+          borderTopRightRadius: 8,
+          pointerEvents: 'auto'
+        }}
         title="Estirar hacia arriba"
       />
 
-      {/* Handle inferior (resize abajo) */}
+      {/* Handle inferior (resize abajo) - Separado del drag */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize z-[2]"
-        onMouseDown={(e) => onResizeStart(e, block.id, 'bottom')}
-        style={{ background: 'rgba(0,0,0,0.15)', borderBottomLeftRadius: 8, borderBottomRightRadius: 8 }}
+        className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize z-[4] touch-none"
+        onMouseDown={(e) => handleResizeStart(e, 'bottom')}
+        onTouchStart={(e) => handleResizeStart(e, 'bottom')}
+        style={{ 
+          background: 'rgba(0,0,0,0.15)', 
+          borderBottomLeftRadius: 8, 
+          borderBottomRightRadius: 8,
+          pointerEvents: 'auto'
+        }}
         title="Estirar hacia abajo"
       />
+
+      {/* Indicadores visuales para móvil */}
+      <div className="absolute top-1 left-1 w-2 h-2 bg-white/30 rounded-full pointer-events-none z-[1]" />
+      <div className="absolute bottom-1 left-1 w-2 h-2 bg-white/30 rounded-full pointer-events-none z-[1]" />
     </div>
   )
 }

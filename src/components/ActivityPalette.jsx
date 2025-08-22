@@ -36,7 +36,7 @@ function ActivityBlock({ activity }) {
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    touchAction: 'none', // mejora arrastre en móvil
+    touchAction: 'none',
   }
 
   return (
@@ -122,35 +122,30 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
   }
 
   return (
-    <div>
-      <h2 className="text-sm font-semibold mb-2">Paleta de actividades</h2>
+    <div className="bg-white rounded-lg border p-4 shadow-sm">
+      <h2 className="text-sm font-semibold mb-3">Crear actividad</h2>
 
-      {/* Formulario responsive para crear actividad */}
-      <form onSubmit={handleSubmit} className="grid gap-2">
-        <div className="grid gap-1">
-          <label className="text-xs" htmlFor="activity-name">Nombre</label>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
           <input
-            id="activity-name"
+            type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-lg border px-3 py-2 tap-target"
-            placeholder="Ej. Química Inorgánica"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            placeholder="Nombre de la actividad"
           />
         </div>
 
-        <div className="grid gap-1">
-          <span className="text-xs">Color</span>
-
+        <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               {QUICK_COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className="w-6 h-6 rounded-full border-2"
+                  className="w-5 h-5 rounded-full border-2"
                   style={{ backgroundColor: c, borderColor: color === c ? '#111827' : 'transparent' }}
-                  aria-label={`Elegir color ${c}`}
                   title={c}
                 />
               ))}
@@ -158,49 +153,28 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
 
             <button
               type="button"
-              className="text-xs rounded-lg border px-2 py-1"
+              className="text-xs rounded border px-2 py-1"
               onClick={() => setShowMoreColors((s) => !s)}
-              aria-expanded={showMoreColors}
-              aria-controls="more-colors-pop"
               title="Más colores"
             >
-              Más colores
+              Más
             </button>
 
             {showMoreColors && (
-              <div id="more-colors-pop" ref={popRef} className="relative z-20">
+              <div ref={popRef} className="relative z-20">
                 <div className="absolute mt-2 rounded-lg border bg-white p-2 shadow-sm"
-                     style={{ minWidth: 180 }}>
-                  <div className="grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
+                     style={{ minWidth: 160 }}>
+                  <div className="grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gap: 4 }}>
                     {MORE_COLORS.map((c) => (
                       <button
                         key={c}
                         type="button"
                         onClick={() => { setColor(c); setShowMoreColors(false) }}
-                        className="w-6 h-6 rounded-full border-2"
+                        className="w-5 h-5 rounded-full border-2"
                         style={{ backgroundColor: c, borderColor: color === c ? '#111827' : 'transparent' }}
-                        aria-label={`Elegir color ${c}`}
                         title={c}
                       />
                     ))}
-                  </div>
-
-                  <div className="mt-2">
-                    <label className="text-xs">Personalizado</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        type="color"
-                        value={color}
-                        onChange={(e) => setColor(e.target.value)}
-                        aria-label="Elegir color personalizado"
-                        title={color}
-                      />
-                      <input
-                        className="rounded-lg border px-2 py-1 text-xs"
-                        value={color}
-                        onChange={(e) => setColor(e.target.value)}
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
@@ -208,12 +182,21 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-8">
-          <button type="submit" className="rounded-lg border px-3 py-2 tap-target">
-            Agregar
-          </button>
-        </div>
+        <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm hover:bg-blue-700">
+          Agregar
+        </button>
       </form>
+
+      {activities.length > 0 && (
+        <div className="mt-4 pt-3 border-t">
+          <h3 className="text-xs font-medium text-gray-600 mb-2">Actividades:</h3>
+          <div className="space-y-2">
+            {activities.map((activity) => (
+              <ActivityBlock key={activity.id} activity={activity} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
