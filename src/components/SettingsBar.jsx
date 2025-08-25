@@ -1,6 +1,7 @@
 // src/components/SettingsBar.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import { DAYS } from '../lib/time.js'
+import { clearAllStorage } from '../lib/storage.js'
 
 /**
  * value = {
@@ -132,6 +133,35 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
                     </div>
                   </>
                 )}
+              </div>
+            </div>
+
+            {/* Sección de almacenamiento */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-3 border-b pb-2">Almacenamiento</h4>
+              <div className="space-y-3">
+                <div className="text-xs text-gray-600 bg-blue-50 p-3 rounded border border-blue-200">
+                  <p className="font-medium mb-1">💾 Guardado automático activado</p>
+                  <p>Tu horario se guarda automáticamente en el navegador. Los datos incluyen:</p>
+                  <ul className="list-disc list-inside mt-1 ml-2">
+                    <li>Actividades creadas</li>
+                    <li>Tarjetas en la grilla con posiciones exactas</li>
+                    <li>Configuración de días y horarios</li>
+                  </ul>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('¿Estás seguro de que quieres borrar todos los datos guardados? Esta acción no se puede deshacer.')) {
+                      clearAllStorage();
+                      window.location.reload();
+                    }
+                  }}
+                  className="w-full bg-red-600 text-white py-2 px-4 rounded-lg text-sm hover:bg-red-700 transition-colors"
+                >
+                  🗑️ Borrar todos los datos guardados
+                </button>
               </div>
             </div>
           </div>

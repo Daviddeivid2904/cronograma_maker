@@ -159,6 +159,13 @@ function DraggableBlock({
             <div className="opacity-70 text-[10px] leading-3 mt-0.5 truncate">{block.subtitle}</div>
           )}
           <div className="opacity-80">{block.timeLabel}</div>
+          
+          {/* Indicador de selección */}
+          {selected && (
+            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded-full">
+              Seleccionada
+            </div>
+          )}
         </div>
 
         {/* manija inferior (drag directo) */}
@@ -300,8 +307,7 @@ function Cell({ dayIndex, slotIndex, onCellClick, isPlacementArmed }) {
 /* ===========================
    Componente principal
    =========================== */
-export default function WeekGrid({ activities, config, children, onBlocksChange }) {
-  const {
+  export default function WeekGrid({ activities, config, children, blocks, onBlocksChange }) {  const {
     days = DAYS_FULL,
     start = '07:00',
     end = '22:00',
@@ -340,10 +346,6 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
     return `${ehh}:${emm}`
   }, [end, stepMin])
 
-  // estado bloques
-  const [blocks, setBlocks] = useState([])
-  useEffect(() => { onBlocksChange?.(blocks) }, [blocks, onBlocksChange])
-
   const [selectedId, setSelectedId] = useState(null)
 
   // Resize state (se maneja con listeners globales mientras está activo)
@@ -358,6 +360,26 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
   // mido el alto del slot desde CSS var (cambia en responsive)
   const slotPxRef = useRef(36)
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
+
+  const setBlocks = (next) => {
+    const value = typeof next === 'function' ? next(blocks) : next
+    onBlocksChange?.(value)
+  }
+  
+
+  // Deseleccionar automáticamente cuando el usuario empiece a escribir
+  useEffect(() => {
+    function onInputFocus() {
+      if (selectedId) {
+        setSelectedId(null)
+        setMoveBlockId(null)
+      }
+    }
+    
+    // Escuchar cuando se hace focus en inputs
+    document.addEventListener('focusin', onInputFocus)
+    return () => document.removeEventListener('focusin', onInputFocus)
+  }, [selectedId])
 
   // sensores: pointer + touch
   const sensors = useSensors(
@@ -491,8 +513,21 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
   useEffect(() => {
     function onKey(e) {
       if (!selectedId) return
+      
       // No borrar si hay un modal abierto
       if (document.querySelector('.fixed.inset-0.bg-black\\/50')) return
+      
+      // No borrar si el usuario está escribiendo en un input, textarea o contenteditable
+      const activeElement = document.activeElement
+      if (activeElement && (
+        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'TEXTAREA' || 
+        activeElement.contentEditable === 'true' ||
+        activeElement.isContentEditable
+      )) {
+        return
+      }
+      
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault()
         setBlocks(prev => prev.filter(b => b.id !== selectedId))
@@ -532,6 +567,28 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
 
   // click en celda -> colocar o mover
   function handleCellClick(dayIndex, slotIndex) {
+    // Si hay una tarjeta seleccionada, moverla directamente
+    if (selectedId) {
+      setBlocks(prev => prev.map(b => {
+        if (b.id !== selectedId) return b
+        const duration = b.endSlot - b.startSlot
+        const newStart = slotIndex
+        const newEnd = Math.min(maxSlotIndex + 1, newStart + duration)
+        return {
+          ...b,
+          dayIndex,
+          startSlot: newStart,
+          endSlot: newEnd,
+          topPx: toTopPx(newStart),
+          heightPx: toHeightPx(newStart, newEnd),
+          timeLabel: slotIndexToLabel(start, stepMin, newStart + 1, newEnd + 1),
+        }
+      }))
+      // Mantener la selección para poder seguir moviendo
+      return
+    }
+    
+    // Lógica existente para moveBlockId (modo mover explícito)
     if (moveBlockId) {
       setBlocks(prev => prev.map(b => {
         if (b.id !== moveBlockId) return b
@@ -552,6 +609,8 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
       setMoveBlockId(null)
       return
     }
+    
+    // Lógica para colocar nueva actividad
     if (!placeActivity) return
     const defaultDur = Math.max(2, Math.round(60 / stepMin))
     addBlockAt({ dayIndex, startSlot: slotIndex, durationSlots: defaultDur, activity: placeActivity })
@@ -726,9 +785,13 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
                   const nextH = String(Math.floor(nextSlotTime / 60)).padStart(2, '0')
                   const nextM = String(nextSlotTime % 60).padStart(2, '0')
                   const timeLabel = `${h}:${m}-${nextH}:${nextM}`
+                  
+                  // Mostrar etiqueta cada hora completa o en intervalos lógicos
+                  const showLabel = (i === 0) || (slotTime % 60 === 0) || (i % Math.max(1, Math.floor(60 / stepMin)) === 0)
+                  
                   return (
                     <div key={i} className="border-t border-gray-100 text-[10px] sm:text-xs text-gray-500 h-[var(--slot-height)] flex items-start justify-end pr-2">
-                      {(i % Math.round(60 / stepMin) === 0) && (<span>{timeLabel}</span>)}
+                      {showLabel && (<span>{timeLabel}</span>)}
                     </div>
                   )
                 })}
@@ -876,13 +939,36 @@ export default function WeekGrid({ activities, config, children, onBlocksChange 
           </button>
         </div>
       )}
-      {moveBlockId && (
+      {selectedId && (
         <div className="mt-3 p-3 rounded-xl text-sm flex items-center justify-between bg-yellow-50 border border-yellow-200 text-yellow-900">
-          Modo mover activo: tocá una celda destino.
+          <div className="flex-1">
+            <div className="font-medium">Tarjeta seleccionada:</div>
+            <div className="text-xs opacity-90 mt-1">
+              • Tocá cualquier celda para mover la tarjeta
+              • Presiona Delete/Backspace para borrar la tarjeta
+              • Haz clic en un input para deseleccionar
+            </div>
+          </div>
           <button
-            onClick={() => setMoveBlockId(null)}
+            onClick={() => setSelectedId(null)}
             className="text-xs rounded-lg border px-3 py-1 hover:bg-white"
           >
+            Deseleccionar
+          </button>
+        </div>
+      )}
+      {moveBlockId && !selectedId && (
+        <div className="mt-3 p-3 rounded-xl text-sm flex items-center justify-between bg-yellow-50 border border-yellow-200 text-yellow-900">
+          <div className="flex-1">
+            <div className="font-medium">Modo mover activo:</div>
+            <div className="text-xs opacity-90 mt-1">
+              • Tocá una celda destino para mover la tarjeta
+            </div>
+          </div>
+                      <button
+              onClick={() => setMoveBlockId(null)}
+              className="text-xs rounded-lg border px-3 py-1 hover:bg-white"
+            >
             Cancelar
           </button>
         </div>

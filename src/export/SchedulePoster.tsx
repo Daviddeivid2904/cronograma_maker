@@ -90,8 +90,8 @@ export default function SchedulePoster({
   const grid = buildTimeGrid(
     items.map(i => ({ start: i.start, end: i.end })),
     { 
-      minQuantum: data.tickStepMin ?? 5, 
-      maxQuantum: 60, 
+      minQuantum: data.tickStepMin ?? 30, 
+      maxQuantum: 120, 
       cellCap: data.cellCap ?? 200, 
       padTopMin: 5, 
       padBottomMin: 5 

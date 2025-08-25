@@ -1,33 +1,86 @@
 // src/App.jsx
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import ActivityPalette from './components/ActivityPalette.jsx'
 import ActivityList from './components/ActivityList.jsx'
 import SettingsBar from './components/SettingsBar.jsx'
 import WeekGrid from './components/WeekGrid.jsx'
 import ExportPanel from './components/ExportPanel.jsx'
 import { computeDaysRange } from './lib/time.js'
+import { saveToStorage, loadFromStorage, STORAGE_KEYS, isStorageAvailable } from './lib/storage.js'
 
 export default function App() {
-  const [activities, setActivities] = useState([])
+  // Cargar datos guardados del localStorage al inicializar
+  const [activities, setActivities] = useState(() => {
+    if (isStorageAvailable()) {
+      const loaded = loadFromStorage(STORAGE_KEYS.ACTIVITIES, []);
+      console.log('Cargando actividades del localStorage:', loaded);
+      return loaded;
+    }
+    return [];
+  });
+  
   const [showExportPanel, setShowExportPanel] = useState(false)
-  const [blocks, setBlocks] = useState([])
+  const [blocks, setBlocks] = useState(() => {
+    if (isStorageAvailable()) {
+      const loaded = loadFromStorage(STORAGE_KEYS.BLOCKS, []);
+      console.log('Cargando bloques del localStorage:', loaded);
+      return loaded;
+    }
+    return [];
+  });
 
   // Config (tu versión actual con lunch/horarios y rango de días)
-  const [settings, setSettings] = useState({
-    startDay: 'Lunes',
-    endDay:   'Viernes',
-    start: '08:00',
-    end:   '18:00',
-    stepMin: 60,
-    lunchEnabled: false,
-    lunchStart: '13:00',
-    lunchEnd: '14:00',
-  })
+  const [settings, setSettings] = useState(() => {
+    if (isStorageAvailable()) {
+      return loadFromStorage(STORAGE_KEYS.SETTINGS, {
+        startDay: 'Lunes',
+        endDay:   'Viernes',
+        start: '08:00',
+        end:   '18:00',
+        stepMin: 60,
+        lunchEnabled: false,
+        lunchStart: '13:00',
+        lunchEnd: '14:00',
+      });
+    }
+    return {
+      startDay: 'Lunes',
+      endDay:   'Viernes',
+      start: '08:00',
+      end:   '18:00',
+      stepMin: 60,
+      lunchEnabled: false,
+      lunchStart: '13:00',
+      lunchEnd: '14:00',
+    };
+  });
 
   const days = useMemo(
     () => computeDaysRange(settings.startDay, settings.endDay),
     [settings.startDay, settings.endDay]
   )
+
+  // Guardar automáticamente en localStorage cuando cambien los datos
+  useEffect(() => {
+    if (isStorageAvailable()) {
+      console.log('Guardando actividades:', activities);
+      saveToStorage(STORAGE_KEYS.ACTIVITIES, activities);
+    }
+  }, [activities]);
+
+  useEffect(() => {
+    if (isStorageAvailable()) {
+      console.log('Guardando bloques:', blocks);
+      saveToStorage(STORAGE_KEYS.BLOCKS, blocks);
+    }
+  }, [blocks]);
+
+  useEffect(() => {
+    if (isStorageAvailable()) {
+      console.log('Guardando configuración:', settings);
+      saveToStorage(STORAGE_KEYS.SETTINGS, settings);
+    }
+  }, [settings]);
 
   function handleAddActivity({ name, color }) {
     setActivities(a => [...a, { id: crypto.randomUUID(), name, color }])
@@ -50,7 +103,17 @@ export default function App() {
     // 2) notificamos a la grilla que elimine todos los bloques de esa actividad
     const ev = new CustomEvent('delete-activity', { detail: { activityId } })
     window.dispatchEvent(ev)
+    setBlocks(prev => prev.filter(b => b.activityId !== activityId));
+
   }
+
+  // Función para forzar el guardado de bloques
+  const forceSaveBlocks = () => {
+    if (isStorageAvailable()) {
+      console.log('Forzando guardado de bloques:', blocks);
+      saveToStorage(STORAGE_KEYS.BLOCKS, blocks);
+    }
+  };
 
   const gridConfig = {
     days,
@@ -69,7 +132,7 @@ export default function App() {
      crossorigin="anonymous"></script>
         <div>
           <h1 className="text-2xl font-bold">Planificador semanal</h1>
-          <p className="text-gray-600">Grilla por celdas: arrastrá, estirá,personalizá y descargá.</p>
+          <p className="text-gray-600">Grilla por celdas: arrastrá, estirá, personalizá y descargá.</p>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -83,17 +146,19 @@ export default function App() {
 
       <ActivityPalette onAdd={handleAddActivity} />
 
-      <WeekGrid 
-        activities={activities} 
-        config={gridConfig}
-        onBlocksChange={setBlocks}
-      >
-        <ActivityList
-          activities={activities}
-          onAddToGrid={handleAddToGrid}
-          onDelete={handleDeleteActivity}
-        />
-      </WeekGrid>
+      <WeekGrid
+  activities={activities}
+  config={gridConfig}
+  blocks={blocks}
+  onBlocksChange={setBlocks}
+>
+  <ActivityList
+    activities={activities}
+    onAddToGrid={handleAddToGrid}
+    onDelete={handleDeleteActivity}
+  />
+</WeekGrid>
+
 
       <SettingsBar value={settings} onChange={setSettings} onCreateBreakCard={handleCreateBreakCard} />
 
@@ -118,15 +183,15 @@ export default function App() {
       </div>
 
       <footer className="text-center text-xs text-gray-500 pt-4">
-      <a
-            href="https://www.linkedin.com/in/david-lekerman/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-indigo-600 hover:underline"
-            title="LinkedIn de David Lekerman"
-          >
-            by David Lekerman
-          </a>
+        <a
+          href="https://www.linkedin.com/in/david-lekerman/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-indigo-600 hover:underline"
+          title="LinkedIn de David Lekerman"
+        >
+          by David Lekerman
+        </a>
       </footer>
     </div>
   )

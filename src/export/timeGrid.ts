@@ -41,12 +41,12 @@ export function gcdArray(nums: number[]): number {
  * Construye la grilla temporal "inteligente".
  * - startMin = min(items.start)
  * - endMin   = max(items.end)
- * - quantumMin = clamp(gcd(duraciones), min=5, max=60) y subir hasta no pasar cellCap
+ * - quantumMin = clamp(gcd(duraciones), min=30, max=120) y subir hasta no pasar cellCap
  * - majorTickMin = 60
  */
 export function buildTimeGrid(items: Item[], opts?: {
-  minQuantum?: number;   // default 5
-  maxQuantum?: number;   // default 60
+  minQuantum?: number;   // default 30
+  maxQuantum?: number;   // default 120
   padTopMin?: number;    // default 0..10
   padBottomMin?: number; // default 0..10
   cellCap?: number;      // máximo de filas menores (default 180)
@@ -72,8 +72,8 @@ export function buildTimeGrid(items: Item[], opts?: {
   let q = gcdArray(durs);
 
   // clamps y salvaguardas
-  const minQ = opts?.minQuantum ?? 5;
-  const maxQ = opts?.maxQuantum ?? 60;
+  const minQ = opts?.minQuantum ?? 30;
+  const maxQ = opts?.maxQuantum ?? 120;
   q = Math.min(maxQ, Math.max(minQ, q));
 
   // 3) limitar cantidad de mini-celdas
