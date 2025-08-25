@@ -102,15 +102,17 @@ export default function SchedulePoster({
   const minStart = Math.min(...items.map(i => toMin(i.start)));
   const maxEnd = Math.max(...items.map(i => toMin(i.end)));
 
-  // Paso visible = GCD(duraciones) si es >= 30; si no, 30
+  // Determinar paso visible: usar GCD si todos los bloques tienen múltiplo común >= 30 min
   const durations = items.map(i => Math.max(1, toMin(i.end) - toMin(i.start)));
-  let visibleStep = gcdArray(durations);
-  if (visibleStep < 30) visibleStep = 60;
+  const allEqualDurations = durations.every(d => d === durations[0]);
+  const allMultiplesOf30 = durations.every(d => d % 30 === 0);
+  let visibleStep = allEqualDurations ? durations[0] : (allMultiplesOf30 ? gcdArray(durations) : 60);
+  // Asegurar un rango razonable para la visualización
+  visibleStep = Math.max(30, Math.min(visibleStep, 120));
 
-  // Ancla a inicio de hora
-  const hourStart = Math.floor(minStart / 60) * 60; // anchor
-  const hourEnd   = Math.ceil(maxEnd / 60) * 60;
-  const anchor    = hourStart;
+  // Anclar al inicio más pequeño y calcular fin más grande
+  const anchor = minStart;
+  const hourEnd = maxEnd;
 
   // Segmentar por visibleStep
   const segCount = Math.ceil((hourEnd - anchor) / visibleStep);

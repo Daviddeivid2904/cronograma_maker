@@ -50,14 +50,43 @@ function DraggableBlock({
     return match ? match[2] : '10:00'
   })
 
-  // Actualizar horas cuando cambia el block
+  // Sincronizar el estado local del modal cuando cambian las props del bloque
   useEffect(() => {
+    setSubtitle(block.subtitle || '')
+    setTitle(block.name || '')
     const match = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/)
     if (match) {
       setStartTime(match[1])
       setEndTime(match[2])
     }
-  }, [block.timeLabel])
+  }, [block.id, block.subtitle, block.name, block.timeLabel])
+
+  // Determinar color de texto según el color de fondo para asegurar contraste
+  const getContrastTextColor = (bg) => {
+    try {
+      if (!bg) return '#0f172a'
+      let r, g, b
+      if (bg.startsWith('#')) {
+        const hex = bg.slice(1)
+        const full = hex.length === 3 ? hex.split('').map(c=>c+c).join('') : hex
+        r = parseInt(full.slice(0,2),16)
+        g = parseInt(full.slice(2,4),16)
+        b = parseInt(full.slice(4,6),16)
+      } else if (bg.startsWith('rgb')) {
+        const m = bg.match(/rgb\s*\(\s*(\d+),\s*(\d+),\s*(\d+)/)
+        if (!m) return '#0f172a'
+        r = +m[1]; g = +m[2]; b = +m[3]
+      } else {
+        return '#0f172a'
+      }
+      // Luminance (0..1)
+      const lum = (0.2126 * (r/255) + 0.7152 * (g/255) + 0.0722 * (b/255))
+      return lum > 0.6 ? '#0f172a' : '#ffffff'
+    } catch (e) {
+      return '#0f172a'
+    }
+  }
+  const textColor = getContrastTextColor(block.color)
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `block-${block.id}`,
@@ -72,11 +101,15 @@ function DraggableBlock({
   }
 
   const handleSaveChanges = () => {
+    console.log('DraggableBlock.handleSaveChanges', { id: block.id, subtitle, title, startTime, endTime })
     onUpdateSubtitle?.(block.id, subtitle)
     onUpdateTitle?.(block.id, title)
     onUpdateTime?.(block.id, startTime, endTime)
     setShowEditModal(false)
   }
+
+  // Log de diagnóstico en cada render para comprobar datos y tamaño
+  console.log('DraggableBlock.render', { id: block.id, subtitle: block.subtitle, topPx: block.topPx, heightPx: block.heightPx })
 
   return (
     <>
@@ -92,7 +125,7 @@ function DraggableBlock({
           top: block.topPx,
           height: block.heightPx,
           backgroundColor: block.color,
-          color: '#0f172a',
+          color: textColor,
           ...style,
         }}
       >
@@ -155,9 +188,13 @@ function DraggableBlock({
         {/* contenido */}
         <div className="px-2 py-2 text-xs leading-4 select-none text-center">
           <div className="font-semibold truncate">{block.name}</div>
-          {block.subtitle && (
-            <div className="opacity-70 text-[10px] leading-3 mt-0.5 truncate">{block.subtitle}</div>
-          )}
+          {/* Mostrar subtítulo solo si, tras hacer trim, queda texto visible */}
+          {(() => {
+            const hasSubtitle = !!(block.subtitle && block.subtitle.toString().trim())
+            return hasSubtitle ? (
+              <div className="opacity-70 text-[10px] leading-3 mt-0.5 truncate">{block.subtitle.toString().trim()}</div>
+            ) : null
+          })()}
           <div className="opacity-80">{block.timeLabel}</div>
           
           {/* Indicador de selección */}
@@ -362,8 +399,12 @@ function Cell({ dayIndex, slotIndex, onCellClick, isPlacementArmed }) {
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
 
   const setBlocks = (next) => {
-    const value = typeof next === 'function' ? next(blocks) : next
-    onBlocksChange?.(value)
+    if (typeof next === 'function') {
+      // forward functional update to parent so React uses latest prev
+      onBlocksChange?.((prev) => next(prev))
+    } else {
+      onBlocksChange?.(next)
+    }
   }
   
 
@@ -855,64 +896,71 @@ function Cell({ dayIndex, slotIndex, onCellClick, isPlacementArmed }) {
 
                     {blocks
                       .filter(b => b.dayIndex === dayIndex)
-                      .map(b => (
+                      .map(b => {
+                        console.log('WeekGrid.renderBlock', { id: b.id, subtitle: b.subtitle, name: b.name })
+                        return (
                         <DraggableBlock
-                          key={b.id}
-                          block={b}
-                          selected={selectedId === b.id}
-                          onSelect={handleBlockSelect}
-                          onResizePointerDown={onResizePointerDown}
-                          onDelete={(id) => setBlocks(prev => prev.filter(x => x.id !== id))}
-                          onUpdateSubtitle={(id, newSubtitle) => {
-                            setBlocks(prev => prev.map(b => b.id === id ? { ...b, subtitle: newSubtitle } : b))
-                          }}
-                          onUpdateTitle={(id, newTitle) => {
-                            setBlocks(prev => prev.map(b => b.id === id ? { ...b, name: newTitle } : b))
-                          }}
-                          onUpdateTime={(id, newStartTime, newEndTime) => {
+                           key={b.id}
+                           block={b}
+                           selected={selectedId === b.id}
+                           onSelect={handleBlockSelect}
+                           onResizePointerDown={onResizePointerDown}
+                           onDelete={(id) => setBlocks(prev => prev.filter(x => x.id !== id))}
+                           onUpdateSubtitle={(id, newSubtitle) => {
+                             console.log('WeekGrid.onUpdateSubtitle', { id, newSubtitle })
+                             // Guardar el subtítulo sin espacios al inicio/fin
+                             const clean = newSubtitle?.toString().trim() || ''
+                             setBlocks(prev => prev.map(b => b.id === id ? { ...b, subtitle: clean } : b))
+                           }}
+                           onUpdateTitle={(id, newTitle) => {
+                             console.log('WeekGrid.onUpdateTitle', { id, newTitle })
+                             setBlocks(prev => prev.map(b => b.id === id ? { ...b, name: newTitle } : b))
+                           }}
+                           onUpdateTime={(id, newStartTime, newEndTime) => {
                             
                             setBlocks(prev => prev.map(b => {
-                              if (b.id !== id) return b
-                              
-                              // Convertir horas a minutos
-                              const [startH, startM] = newStartTime.split(':').map(Number)
-                              const [endH, endM] = newEndTime.split(':').map(Number)
-                              const [baseH, baseM] = start.split(':').map(Number)
-                              
-                              const startMinutes = startH * 60 + startM
-                              const endMinutes = endH * 60 + endM
-                              const baseMinutes = baseH * 60 + baseM
-                              
-                              // Calcular slots basados en el paso actual, pero sin redondear
-                              const newStartSlot = (startMinutes - baseMinutes) / stepMin
-                              const newEndSlot = (endMinutes - baseMinutes) / stepMin
-                              
-                              // Asegurar que los slots estén dentro de los límites
-                              const clampedStartSlot = Math.max(0, Math.min(newStartSlot, maxSlotIndex - 1))
-                              const clampedEndSlot = Math.max(clampedStartSlot + 1, Math.min(newEndSlot, maxSlotIndex))
-                              
-                              // Recalcular posición y altura
-                              const newTopPx = toTopPx(clampedStartSlot)
-                              const newHeightPx = toHeightPx(clampedStartSlot, clampedEndSlot)
-                              
-                              // Generar timeLabel con las horas exactas que el usuario ingresó
-                              const newTimeLabel = `${newStartTime}–${newEndTime}`
-                              
-                              return {
-                                ...b,
-                                startSlot: clampedStartSlot,
-                                endSlot: clampedEndSlot,
-                                topPx: newTopPx,
-                                heightPx: newHeightPx,
-                                timeLabel: newTimeLabel,
-                              }
-                            }))
-                          }}
-                          stepMin={stepMin}
-                          start={start}
-                          isMobile={isMobile}
+                               if (b.id !== id) return b
+                               
+                               // Convertir horas a minutos
+                               const [startH, startM] = newStartTime.split(':').map(Number)
+                               const [endH, endM] = newEndTime.split(':').map(Number)
+                               const [baseH, baseM] = start.split(':').map(Number)
+                               
+                               const startMinutes = startH * 60 + startM
+                               const endMinutes = endH * 60 + endM
+                               const baseMinutes = baseH * 60 + baseM
+                               
+                               // Calcular slots basados en el paso actual, pero sin redondear
+                               const newStartSlot = (startMinutes - baseMinutes) / stepMin
+                               const newEndSlot = (endMinutes - baseMinutes) / stepMin
+                               
+                               // Asegurar que los slots estén dentro de los límites
+                               const clampedStartSlot = Math.max(0, Math.min(newStartSlot, maxSlotIndex - 1))
+                               const clampedEndSlot = Math.max(clampedStartSlot + 1, Math.min(newEndSlot, maxSlotIndex))
+                               
+                               // Recalcular posición y altura
+                               const newTopPx = toTopPx(clampedStartSlot)
+                               const newHeightPx = toHeightPx(clampedStartSlot, clampedEndSlot)
+                               
+                               // Generar timeLabel con las horas exactas que el usuario ingresó
+                               const newTimeLabel = `${newStartTime}–${newEndTime}`
+                               
+                               return {
+                                 ...b,
+                                 startSlot: clampedStartSlot,
+                                 endSlot: clampedEndSlot,
+                                 topPx: newTopPx,
+                                 heightPx: newHeightPx,
+                                 timeLabel: newTimeLabel,
+                               }
+                             }))
+                           }}
+                           stepMin={stepMin}
+                           start={start}
+                           isMobile={isMobile}
                         />
-                      ))}
+                        )
+                      })}
                   </div>
                 ))}
               </div>

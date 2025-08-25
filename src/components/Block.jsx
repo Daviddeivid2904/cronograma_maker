@@ -29,6 +29,32 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
     data: { type: 'block', blockId: block.id, block },
   })
 
+  // Determinar color de texto según el color de fondo para asegurar contraste
+  const getContrastTextColor = (bg) => {
+    try {
+      if (!bg) return '#ffffff'
+      let r, g, b
+      if (bg.startsWith('#')) {
+        const hex = bg.slice(1)
+        const full = hex.length === 3 ? hex.split('').map(c=>c+c).join('') : hex
+        r = parseInt(full.slice(0,2),16)
+        g = parseInt(full.slice(2,4),16)
+        b = parseInt(full.slice(4,6),16)
+      } else if (bg.startsWith('rgb')) {
+        const m = bg.match(/rgb\s*\(\s*(\d+),\s*(\d+),\s*(\d+)/)
+        if (!m) return '#ffffff'
+        r = +m[1]; g = +m[2]; b = +m[3]
+      } else {
+        return '#ffffff'
+      }
+      const lum = (0.2126 * (r/255) + 0.7152 * (g/255) + 0.0722 * (b/255))
+      return lum > 0.6 ? '#0f172a' : '#ffffff'
+    } catch (e) {
+      return '#ffffff'
+    }
+  }
+  const textColor = getContrastTextColor(block.color)
+
   const style = {
     transform: CSS.Translate.toString(transform),
     gridColumn: block.dayIndex + 2,
@@ -38,6 +64,7 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
     outline: isSelected ? '2px solid rgba(59,130,246,0.9)' : 'none', // azul
     outlineOffset: '0px',
     borderRadius: '0.5rem',
+    color: textColor,
   }
 
   // Función para manejar el resize en móvil
@@ -56,7 +83,7 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
     <>
       <div
         ref={setNodeRef}
-        className="shadow-sm text-white text-xs px-2 py-1 select-none relative"
+        className="shadow-sm text-xs px-2 py-1 select-none relative"
         style={style}
       >
         {/* Área central: activa drag y además selecciona/arma teletransporte con TAP */}
