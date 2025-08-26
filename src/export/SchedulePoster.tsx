@@ -102,13 +102,25 @@ export default function SchedulePoster({
   const minStart = Math.min(...items.map(i => toMin(i.start)));
   const maxEnd = Math.max(...items.map(i => toMin(i.end)));
 
-  // Determinar paso visible: usar GCD si todos los bloques tienen múltiplo común >= 30 min
-  const durations = items.map(i => Math.max(1, toMin(i.end) - toMin(i.start)));
-  const allEqualDurations = durations.every(d => d === durations[0]);
-  const allMultiplesOf30 = durations.every(d => d % 30 === 0);
-  let visibleStep = allEqualDurations ? durations[0] : (allMultiplesOf30 ? gcdArray(durations) : 60);
-  // Asegurar un rango razonable para la visualización
-  visibleStep = Math.max(30, Math.min(visibleStep, 120));
+// Determinar paso visible (30, 45, 60, 70, 80, 90, 100, 110, 120)
+// Regla: tomamos el GCD de las duraciones y elegimos el MENOR paso permitido
+// que divida ese GCD y sea >= 30. Si no hay, caemos a 60.
+const durations = items
+  .map(i => Math.max(1, toMin(i.end) - toMin(i.start)))
+  .filter(d => Number.isFinite(d) && d > 0);
+
+const ALLOWED_STEPS = [30,35,40,45,50,55, 60, 65,70,75, 80,85, 90, 95, 100, 110, 120];
+
+let visibleStep = 60; // default
+if (durations.length) {
+  const g = gcdArray(durations);
+  const candidate = ALLOWED_STEPS.find(s => g >= 30 && g % s === 0);
+  visibleStep = candidate ?? 60;
+}
+
+// Clamp final por las dudas
+visibleStep = Math.max(30, Math.min(visibleStep, 120));
+
 
   // Anclar al inicio más pequeño y calcular fin más grande
   const anchor = minStart;

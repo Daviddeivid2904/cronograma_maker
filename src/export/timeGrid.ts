@@ -1,114 +1,235 @@
+// src/export/timeGrid.ts
+// Construcción de grilla temporal y helpers, con compatibilidad hacia atrás,
+// soporte buildTimeGrid(items) y opciones extra usadas por SchedulePoster.tsx.
+//
+// Cambios clave:
+// - Exporta gcdArray.
+// - buildTimeGrid acepta opciones: minQuantum, maxQuantum, cellCap, padTopMin, padBottomMin.
+// - Inferencia de ventana respeta pads superior/inferior.
+
 export type Item = { start: string; end: string };
 
 export type TimeGrid = {
-  startMin: number;      // p.ej. 7*60
-  endMin: number;        // p.ej. 19*60
-  quantumMin: number;    // GCD de duraciones, con límites
-  majorTickMin: number;  // 60 (horas)
+  startMin: number;      // ej. 7*60
+  endMin: number;        // ej. 19*60
+  quantumMin: number;    // paso real detectado (GCD de duraciones / alineaciones)
+  majorTickMin: number;  // paso de renglón “grueso” (coincide con quantum si >=30; si no, 60)
 };
 
-// Convertir "HH:MM" a minutos totales
+// ---------- Conversión HH:MM ----------
 export function toMin(hhmm: string): number {
-  const [hours, minutes] = String(hhmm || '00:00').split(':').map(Number);
-  return hours * 60 + (minutes || 0);
+  const [h, m] = String(hhmm || "00:00").split(":").map(Number);
+  return h * 60 + (m || 0);
 }
 
-// Convertir minutos totales a "HH:MM"
 export function toHHMM(min: number): string {
-  const h = String(Math.floor(min / 60)).padStart(2, '0');
-  const m = String(min % 60).padStart(2, '0');
-  return `${h}:${m}`;
+  const M = ((min % (24 * 60)) + (24 * 60)) % (24 * 60);
+  const h = Math.floor(M / 60);
+  const m = M % 60;
+  const pad = (x: number) => String(x).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}`;
 }
 
-// Algoritmo de Euclides para GCD
-export function gcd(a: number, b: number): number {
-  a = Math.abs(a);
-  b = Math.abs(b);
-  while (b) {
-    [a, b] = [b, a % b];
-  }
-  return a;
+// ---------- Aritmética ----------
+function gcd(a: number, b: number): number {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b) [a, b] = [b, a % b];
+  return a || 0;
 }
 
-// GCD de un array de números
-export function gcdArray(nums: number[]): number {
-  if (nums.length === 0) return 1;
-  if (nums.length === 1) return nums[0];
-  return nums.reduce((acc, num) => gcd(acc, num));
+// ✅ Exportado (SchedulePoster.tsx lo importa)
+export function gcdArray(arr: number[]): number {
+  if (!arr.length) return 0;
+  return arr.reduce((g, v) => gcd(g, Math.round(v)));
 }
 
-/**
- * Construye la grilla temporal "inteligente".
- * - startMin = min(items.start)
- * - endMin   = max(items.end)
- * - quantumMin = clamp(gcd(duraciones), min=30, max=120) y subir hasta no pasar cellCap
- * - majorTickMin = 60
- */
-export function buildTimeGrid(items: Item[], opts?: {
-  minQuantum?: number;   // default 30
-  maxQuantum?: number;   // default 120
-  padTopMin?: number;    // default 0..10
-  padBottomMin?: number; // default 0..10
-  cellCap?: number;      // máximo de filas menores (default 180)
-}): TimeGrid {
-  if (items.length === 0) {
-    return { startMin: 7 * 60, endMin: 18 * 60, quantumMin: 60, majorTickMin: 60 };
-  }
-
-  // 1) extremos
-  const starts = items.map(i => toMin(i.start));
-  const ends = items.map(i => toMin(i.end));
-  let startMin = Math.min(...starts);
-  let endMin = Math.max(...ends);
-
-  // padding suave (evita tocar bordes)
-  const padTop = opts?.padTopMin ?? Math.min(10, Math.max(0, Math.floor((endMin - startMin) * 0.02)));
-  const padBot = opts?.padBottomMin ?? Math.min(10, Math.max(0, Math.floor((endMin - startMin) * 0.02)));
-  startMin = Math.max(0, startMin - padTop);
-  endMin = endMin + padBot;
-
-  // 2) gcd de duraciones
-  const durs = items.map(i => Math.max(1, toMin(i.end) - toMin(i.start)));
-  let q = gcdArray(durs);
-
-  // clamps y salvaguardas
-  const minQ = opts?.minQuantum ?? 30;
-  const maxQ = opts?.maxQuantum ?? 120;
-  q = Math.min(maxQ, Math.max(minQ, q));
-
-  // 3) limitar cantidad de mini-celdas
-  const cap = opts?.cellCap ?? 180; // p.ej. 12h con quantum 4' serían 180
-  while (Math.ceil((endMin - startMin) / q) > cap && q < maxQ) {
-    q *= 2;
-  }
-
-  return { startMin, endMin, quantumMin: q, majorTickMin: 60 };
+function roundDown(v: number, step: number): number {
+  return Math.floor(v / step) * step;
+}
+function roundUp(v: number, step: number): number {
+  return Math.ceil(v / step) * step;
 }
 
-// Generar ticks mayores (cada hora)
-export function generateMajorTicks(grid: TimeGrid): number[] {
-  const ticks: number[] = [];
-  const startHour = Math.ceil(grid.startMin / 60);
-  const endHour = Math.floor(grid.endMin / 60);
-  
-  for (let hour = startHour; hour <= endHour; hour++) {
-    const tick = hour * 60;
-    if (tick >= grid.startMin && tick <= grid.endMin) {
-      ticks.push(tick);
+// ---------- Paso y ventana a partir de items ----------
+function inferStepFromItems(items: Item[]): number {
+  const starts: number[] = [];
+  const durations: number[] = [];
+  for (const it of items) {
+    const s = toMin(it.start);
+    const e = toMin(it.end);
+    if (Number.isFinite(s) && Number.isFinite(e)) {
+      starts.push(s);
+      const d = e - s;
+      if (d > 0) durations.push(d);
     }
   }
-  
-  return ticks;
+  const g = gcdArray([...starts, ...durations]);
+  return g >= 30 ? g : 60; // regla: si <30 → 60
 }
 
-// Generar sub-ticks (cada quantum)
-export function generateSubTicks(grid: TimeGrid): number[] {
-  const ticks: number[] = [];
-  for (let t = grid.startMin; t <= grid.endMin; t += grid.quantumMin) {
-    // No incluir si ya está en majorTicks
-    if (t % grid.majorTickMin !== 0) {
-      ticks.push(t);
-    }
+function inferWindowFromItems(
+  items: Item[],
+  opts?: { paddingMin?: number; padTopMin?: number; padBottomMin?: number }
+): { minVisibleMin: number; maxVisibleMin: number } {
+  let minS = Number.POSITIVE_INFINITY;
+  let maxE = 0;
+  for (const it of items) {
+    const s = toMin(it.start);
+    const e = toMin(it.end);
+    if (Number.isFinite(s)) minS = Math.min(minS, s);
+    if (Number.isFinite(e)) maxE = Math.max(maxE, e);
   }
-  return ticks;
+  if (!Number.isFinite(minS)) minS = 9 * 60;  // fallback razonable
+  if (!Number.isFinite(maxE) || maxE <= minS) maxE = minS + 8 * 60;
+
+  const padTop = Math.max(0, Math.round(opts?.padTopMin ?? opts?.paddingMin ?? 0));
+  const padBottom = Math.max(0, Math.round(opts?.padBottomMin ?? opts?.paddingMin ?? 0));
+
+  return {
+    minVisibleMin: Math.max(0, minS - padTop),
+    maxVisibleMin: Math.min(24 * 60, maxE + padBottom),
+  };
+}
+
+// ---------- Tipos de opciones ----------
+type ItemsOpts = {
+  paddingMin?: number;      // padding simétrico (fallback)
+  padTopMin?: number;       // padding superior
+  padBottomMin?: number;    // padding inferior
+  minVisibleMin?: number;
+  maxVisibleMin?: number;
+  tickStepMin?: number;
+  /** Paso mínimo deseado; si tickStepMin es menor, se eleva a este mínimo. */
+  minQuantum?: number;
+  /** Paso máximo deseado; si tickStepMin es mayor, se baja a este máximo. */
+  maxQuantum?: number;
+  /** Límite opcional de celdas/segmentos (no lo usamos aquí, pero se acepta). */
+  cellCap?: number;
+};
+
+type DirectOpts = {
+  minVisibleMin: number;
+  maxVisibleMin: number;
+  tickStepMin?: number;
+  minQuantum?: number;
+  maxQuantum?: number;
+  // no hace falta padTop/padBottom aquí (se supone que ya vienen fijos)
+  cellCap?: number;
+};
+
+// ---------- Grid principal ----------
+//
+// Formatos aceptados:
+//   A) buildTimeGrid(items: Item[]): TimeGrid
+//   B) buildTimeGrid(items: Item[], opts?: ItemsOpts): TimeGrid
+//   C) buildTimeGrid(opts: DirectOpts): TimeGrid
+//   D) buildTimeGrid(minVisibleMin: number, maxVisibleMin: number): TimeGrid
+//   E) buildTimeGrid(minVisibleMin: number, maxVisibleMin: number, tickStepMin: number): TimeGrid
+//
+export function buildTimeGrid(
+  a: Item[] | DirectOpts | number,
+  b?: ItemsOpts | number,
+  c?: number
+): TimeGrid {
+  let minVisibleMin: number;
+  let maxVisibleMin: number;
+  let tickStepMin: number;
+  let minQuantum: number | undefined;
+  let maxQuantum: number | undefined;
+
+  if (Array.isArray(a)) {
+    // Caso A/B: items + (opts?)
+    const items = a as Item[];
+    const opts = (typeof b === "object" && b !== null ? b : {}) as ItemsOpts;
+
+    const inferredStep = inferStepFromItems(items);
+    tickStepMin = opts.tickStepMin ?? inferredStep;
+    minQuantum = opts.minQuantum;
+    maxQuantum = opts.maxQuantum;
+
+    if (typeof opts.minVisibleMin === "number" && typeof opts.maxVisibleMin === "number") {
+      minVisibleMin = opts.minVisibleMin;
+      maxVisibleMin = opts.maxVisibleMin;
+    } else {
+      const { minVisibleMin: mn, maxVisibleMin: mx } = inferWindowFromItems(items, {
+        paddingMin: opts.paddingMin,
+        padTopMin: opts.padTopMin,
+        padBottomMin: opts.padBottomMin,
+      });
+      minVisibleMin = mn;
+      maxVisibleMin = mx;
+    }
+  } else if (typeof a === "object" && a !== null) {
+    // Caso C: objeto directo
+    const opts = a as DirectOpts;
+    minVisibleMin = opts.minVisibleMin;
+    maxVisibleMin = opts.maxVisibleMin;
+    tickStepMin = opts.tickStepMin ?? 60;
+    minQuantum = opts.minQuantum;
+    maxQuantum = opts.maxQuantum;
+  } else {
+    // Caso D/E: números legacy
+    minVisibleMin = a as number;
+    maxVisibleMin = (b as number) ?? (a as number) + 60;
+    tickStepMin = c ?? 60;
+    minQuantum = undefined;
+    maxQuantum = undefined;
+  }
+
+  // Aplicar min/maxQuantum si vienen
+  const rawCandidate = Math.max(5, Math.round(tickStepMin || 60));
+  const enforcedMin = typeof minQuantum === "number" ? Math.max(5, Math.round(minQuantum)) : 0;
+  const enforcedMax = typeof maxQuantum === "number" ? Math.max(5, Math.round(maxQuantum)) : Infinity;
+  const raw = Math.min(Math.max(rawCandidate, enforcedMin), enforcedMax);
+
+  // Regla final del mayor (grilla visible): si <30 → 60
+  const major = raw >= 30 ? raw : 60;
+
+  const startMin = roundDown(minVisibleMin, major);
+  const endMin = roundUp(maxVisibleMin, major);
+
+  return { startMin, endMin, quantumMin: raw, majorTickMin: major };
+}
+
+// ---------- Ticks ----------
+//
+// NUEVO (preferido):
+//   generateMajorTicks(grid: TimeGrid)
+//
+// LEGACY (compat):
+//   generateMajorTicks(grid: TimeGrid, /*cualquier segundo arg*/)
+//
+// El segundo argumento (si existe) se ignora para mantener compatibilidad.
+//
+export function generateMajorTicks(grid: TimeGrid, _legacyArg?: unknown): number[] {
+  const out: number[] = [];
+  const step = grid.majorTickMin;
+  const first = roundUp(grid.startMin, step);
+  for (let t = first; t <= grid.endMin; t += step) out.push(t);
+  return out;
+}
+
+// NUEVO:
+//   generateSubTicks(grid: TimeGrid)
+//
+// LEGACY (compat):
+//   generateSubTicks(grid: TimeGrid, /*cualquier segundo arg*/)
+//
+// El segundo argumento (si existe) se ignora.
+//
+export function generateSubTicks(grid: TimeGrid, _legacyArg?: unknown): number[] {
+  const major = grid.majorTickMin;
+  const divisors = [6, 5, 3, 2];
+  let sub = 0;
+  for (const d of divisors) {
+    if (major % d === 0) { sub = major / d; break; }
+  }
+  if (!sub || sub < 10) return [];
+
+  const res: number[] = [];
+  const first = roundUp(grid.startMin, sub);
+  for (let t = first; t <= grid.endMin; t += sub) {
+    if ((t - grid.startMin) % major !== 0) res.push(t); // evitar duplicar donde ya hay mayor
+  }
+  return res;
 }
