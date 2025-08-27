@@ -14,12 +14,19 @@ import {
 } from './timeGrid';
 
 // ancho aproximado de una línea en píxeles (0.58em ≈ promedio latino)
+// ancho aproximado de una línea en píxeles (0.58em ≈ promedio latino)
 function approxLineWidth(text: string, fontSize: number): number {
   return (text?.length || 0) * fontSize * 0.58;
 }
 
-// Parte un texto en hasta maxLines líneas para que quepa en maxWidth
-function wrapToWidth(text: string, fontSize: number, maxWidth: number, maxLines = 2): string[] {
+// Parte texto en hasta maxLines líneas para que quepa en maxWidth.
+// Si no entra todo en las líneas disponibles, agrega "…" al final.
+function wrapWithEllipsis(
+  text: string,
+  fontSize: number,
+  maxWidth: number,
+  maxLines: number
+): string[] {
   if (!text) return [""];
   const words = text.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
@@ -37,25 +44,28 @@ function wrapToWidth(text: string, fontSize: number, maxWidth: number, maxLines 
         cur = w;
         if (lines.length === maxLines - 1) break;
       } else {
-        // palabra larga sola: no partir, dejar que fitTitle reduzca tamaño
+        // palabra larguísima: la cortamos “bruscamente”
+        // y dejamos que SVG la muestre igual (no reducimos tamaño)
         cur = w;
       }
     }
   }
   if (cur) lines.push(cur);
-  return lines.slice(0, maxLines);
-}
 
-// Busca el tamaño de fuente más grande que entra en el ancho
-function fitTitle(title: string, innerW: number, ideal: number, min = 18, maxLines = 2): { size: number; lines: string[] } {
-  let size = ideal;
-  while (size > min) {
-    const lines = wrapToWidth(title, size, innerW, maxLines);
-    const widest = Math.max(...lines.map(l => approxLineWidth(l, size)), 0);
-    if (widest <= innerW) return { size, lines };
-    size -= 1;
+  // Si sobran palabras y ya no hay más líneas → agregar “…” al final de la última
+  const totalJoined = lines.join(" ");
+  const usedWords = totalJoined ? totalJoined.split(/\s+/).length : 0;
+  if (usedWords < words.length && lines.length === maxLines) {
+    const last = lines[lines.length - 1];
+    // Ajustar para que quepa “ …”
+    let ell = last + " …";
+    while (!fits(ell) && ell.length > 1) {
+      ell = ell.slice(0, -2) + "…"; // recortamos un poco antes del espacio
+    }
+    lines[lines.length - 1] = ell;
   }
-  return { size: min, lines: wrapToWidth(title, min, innerW, maxLines) };
+
+  return lines.slice(0, maxLines);
 }
 
 export default function SchedulePoster({ 
@@ -280,122 +290,129 @@ visibleStep = Math.max(30, Math.min(visibleStep, 240));
       {/* Bloques */}
       <g transform={`translate(${gridLeft}, ${gridTop})`}>
         {items.map((it, idx) => {
-          // Hora exacta con tolerancia mínima (sin snap duro)
-          const EPS = 2; // minutos
-          const alignTolerant = (m: number) => {
-            const rel = m - anchor;
-            const mod = ((rel % visibleStep) + visibleStep) % visibleStep;
-            if (mod <= EPS) return m - mod;
-            if (visibleStep - mod <= EPS) return m + (visibleStep - mod);
-            return m;
-          };
+  // ==== geometría del bloque ====
+  const sMin = toMin(it.start);
+  const eMin = toMin(it.end);
+  const y = (sMin - anchor) * pxPerMin;
+  const h = Math.max(12, (eMin - sMin) * pxPerMin);
+  const x = it.dayIndex * colW + 2;
+  const w = colW - 4;
 
-          const sMin = alignTolerant(toMin(it.start));
-          const eMin = alignTolerant(toMin(it.end));
+  // ==== colores ====
+  const fg = it.textColor || getTextColorForBg(it.color);
 
-          const y = (sMin - anchor) * pxPerMin;
-          const h = Math.max(4, (eMin - sMin) * pxPerMin); // mínimo 4px
-          const x = it.dayIndex * colW + 2;
-          const w = colW - 4;
+  // ==== tipografías FIJAS para TODOS los bloques ====
+  const PADDING_X = Math.max(16, Math.floor(w * 0.08));
+  const PADDING_TOP = 10;
+  const PADDING_BOTTOM = 10;
+  const LINE_GAP = 4;
 
-          const fg = it.textColor || getTextColorForBg(it.color);
-          // === Texto grande centrado dentro del bloque ===
-          const inner = Math.max(16, Math.min(28, Math.floor(w * 0.08))); // padding lateral
-          const usableW = w - inner * 2;
+  const TITLE_SIZE = 34;       // <-- mismo tamaño en todas las tarjetas
+  const SUBTITLE_SIZE = 18;    // idem
+  const TIME_SIZE = 18;        // la hora al pie, tamaño fijo
 
-          // TAMAÑOS: subimos bastante el ideal del título y del horario
-          const idealTitle = Math.min(Math.max(28, Math.floor(h * 0.34)), 56);
-          const { size: titleSize, lines: titleLines } =
-            fitTitle(String(it.title || ""), usableW, idealTitle, 18, 2);
+  const cx = x + w / 2;
+  const usableW = w - PADDING_X * 2;
 
-          // Subtítulo (si existe)
-          const hasSubtitle = it.subtitle && it.subtitle.trim();
-          const subtitleSize = hasSubtitle ? Math.min(Math.max(16, Math.floor(h * 0.18)), 24) : 0;
-          const { size: actualSubtitleSize, lines: subtitleLines } = hasSubtitle ? 
-            fitTitle(String(it.subtitle || ""), usableW, subtitleSize, 14, 1) : 
-            { size: 0, lines: [] };
+  // ==== cuánto alto disponible queda para título/subtítulo si fijo la hora abajo ====
+  const timeBlockH = TIME_SIZE; // sin gap inferior porque va al borde inferior
+  const availableForText = h - PADDING_TOP - PADDING_BOTTOM - timeBlockH - 8; // 8px de separación con la hora
 
-          const timeSize = Math.min(Math.max(14, Math.floor(h * 0.20)), 28);
-          const gap = Math.max(6, Math.floor(h * 0.07));
-          const subtitleGap = hasSubtitle ? Math.max(6, Math.floor(h * 0.08)) : 0;
+  // Cálculo de cantidad de líneas posibles según alto disponible
+  // reservamos: (nLinesTitle * TITLE_SIZE) + (hasSubtitle ? (LINE_GAP + SUBTITLE_SIZE) : 0) + (nLinesTitle-1)*LINE_GAP <= availableForText
+  const hasSubtitle = !!(it.subtitle && it.subtitle.trim());
+  // permitimos hasta 3 líneas de título como máximo práctico
+  const maxTitleLinesTheoretical = Math.floor(
+    (availableForText - (hasSubtitle ? (LINE_GAP + SUBTITLE_SIZE) : 0) + LINE_GAP)
+    / (TITLE_SIZE + LINE_GAP)
+  );
+  const maxTitleLines = Math.max(1, Math.min(3, maxTitleLinesTheoretical));
 
-          // Alto total de texto para centrar vertical
-          const titleBlockH = titleLines.length * titleSize + (titleLines.length - 1) * 4;
-          const subtitleBlockH = hasSubtitle ? (subtitleLines.length * actualSubtitleSize + (subtitleLines.length - 1) * 2) : 0;
-          const totalTextH = titleBlockH + (hasSubtitle ? subtitleGap + subtitleBlockH : 0) + gap + timeSize;
-          const baseY = y + (h - totalTextH) / 2;
+  const titleLines = wrapWithEllipsis(String(it.title || ""), TITLE_SIZE, usableW, maxTitleLines);
 
-          const cx = x + w / 2;
+  // si hay subtítulo, vemos si todavía entra; si no entra, lo omitimos
+  let showSubtitle = hasSubtitle;
+  if (showSubtitle) {
+    const titleBlockH = titleLines.length * TITLE_SIZE + (titleLines.length - 1) * LINE_GAP;
+    const needH = titleBlockH + LINE_GAP + SUBTITLE_SIZE;
+    if (needH > availableForText) showSubtitle = false;
+  }
 
-          const svgChildren: React.ReactNode[] = [];
+  // ==== posiciones ====
+  // Título desde arriba
+  let curY = y + PADDING_TOP;
 
-          // Título (hasta 2 líneas), centrado y grande
-          titleLines.forEach((ln, iLine) => {
-            const ly = baseY + titleSize * (iLine + 1) + 4 * iLine;
-            svgChildren.push(
-              <text
-                key={`t-${idx}-${iLine}`}
-                x={cx}
-                y={ly}
-                textAnchor="middle"
-                dominantBaseline="alphabetic"
-                fontFamily="Inter, system-ui, Arial"
-                fontWeight="800"
-                fontSize={titleSize}
-                fill={fg}
-              >
-                {ln}
-              </text>
-            );
-          });
+  // Título (centrado)
+  const titleTexts = titleLines.map((ln, iLine) => {
+    const ly = curY + TITLE_SIZE * (iLine + 1) + LINE_GAP * iLine;
+    return (
+      <text
+        key={`t-${idx}-${iLine}`}
+        x={cx}
+        y={ly}
+        textAnchor="middle"
+        dominantBaseline="alphabetic"
+        fontFamily="Inter, system-ui, Arial"
+        fontWeight="800"
+        fontSize={TITLE_SIZE}
+        fill={fg}
+      >
+        {ln}
+      </text>
+    );
+  });
+  const titleBlockH = titleLines.length * TITLE_SIZE + (titleLines.length - 1) * LINE_GAP;
+  curY += titleBlockH;
 
-          // Subtítulo (si existe), centrado y más pequeño
-          if (hasSubtitle) {
-            subtitleLines.forEach((ln, iLine) => {
-              const ly = baseY + titleBlockH + subtitleGap + actualSubtitleSize * (iLine + 1) + 2 * iLine;
-              svgChildren.push(
-                <text
-                  key={`s-${idx}-${iLine}`}
-                  x={cx}
-                  y={ly}
-                  textAnchor="middle"
-                  dominantBaseline="alphabetic"
-                  fontFamily="Inter, system-ui, Arial"
-                  fontWeight="500"
-                  fontSize={actualSubtitleSize}
-                  fill={fg}
-                  opacity="0.8"
-                >
-                  {ln}
-                </text>
-              );
-            });
-          }
+  // Subtítulo (opcional, debajo del título)
+  let subTextNode: React.ReactNode = null;
+  if (showSubtitle) {
+    curY += LINE_GAP;
+    const ly = curY + SUBTITLE_SIZE; // una sola línea
+    subTextNode = (
+      <text
+        x={cx}
+        y={ly}
+        textAnchor="middle"
+        dominantBaseline="alphabetic"
+        fontFamily="Inter, system-ui, Arial"
+        fontWeight="600"
+        fontSize={SUBTITLE_SIZE}
+        fill={fg}
+        opacity="0.9"
+      >
+        {String(it.subtitle || "")}
+      </text>
+    );
+    curY += SUBTITLE_SIZE;
+  }
 
-          // Horario, centrado y un poco más chico
-          svgChildren.push(
-            <text
-              key={`time-${idx}`}
-              x={cx}
-              y={baseY + titleBlockH + (hasSubtitle ? subtitleGap + subtitleBlockH : 0) + gap + timeSize}
-              textAnchor="middle"
-              dominantBaseline="alphabetic"
-              fontFamily="Inter, system-ui, Arial"
-              fontWeight="650"
-              fontSize={timeSize}
-              fill={fg}
-            >
-              {`${it.start} – ${it.end}`}
-            </text>
-          );
+  // Hora SIEMPRE pegada al pie del bloque (se “corre” si arriba hay mucho texto)
+  const timeY = y + h - PADDING_BOTTOM; // baseline
+  const timeNode = (
+    <text
+      x={cx}
+      y={timeY}
+      textAnchor="middle"
+      dominantBaseline="alphabetic"
+      fontFamily="Inter, system-ui, Arial"
+      fontWeight="700"
+      fontSize={TIME_SIZE}
+      fill={fg}
+    >
+      {`${it.start} – ${it.end}`}
+    </text>
+  );
 
-          return (
-            <g key={idx}>
-              <rect x={x} y={y} width={w} height={h} rx={8} ry={8} fill={it.color} stroke="#000" strokeWidth="1" />
-              {svgChildren}
-            </g>
-          );
-        })}
+  return (
+    <g key={idx}>
+      <rect x={x} y={y} width={w} height={h} rx={8} ry={8} fill={it.color} stroke="#000" strokeWidth="1" />
+      {titleTexts}
+      {subTextNode}
+      {timeNode}
+    </g>
+  );
+})}
       </g>
 
       {/* Leyenda */}
