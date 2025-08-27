@@ -109,23 +109,29 @@ const durations = items
   .map(i => Math.max(1, toMin(i.end) - toMin(i.start)))
   .filter(d => Number.isFinite(d) && d > 0);
 
-let visibleStep = 60; // default
+let visibleStep = 60; // fallback
+
 if (durations.length) {
   const g = gcdArray(durations);
+  const minStart = Math.min(...items.map(i => toMin(i.start)));
 
-  // --- Opción A: usar el GCD directo (recomendada) ---
-  // visibleStep = g >= 30 ? g : 60;
+  // chequea si todos los bloques empiezan y terminan alineados al gcd
+  const allAligned = items.every(it => {
+    const s = toMin(it.start) - minStart;
+    const e = toMin(it.end) - minStart;
+    return s % g === 0 && e % g === 0;
+  });
 
-  // --- Opción B: si querés restringir a una lista de pasos permitidos ---
-  const ALLOWED_STEPS = [30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120];
-  const best = ALLOWED_STEPS.reduce((acc, s) =>
-    g >= 30 && g % s === 0 && s > acc ? s : acc, 0);
-  visibleStep = best || (g >= 30 ? g : 60);
+  if (g >= 30 && allAligned) {
+    visibleStep = g;   // usar gcd (ej. 120)
+  } else {
+    visibleStep = 60;  // bajar a 1 hora
+  }
 }
 
-// (opcional) limitar si no querés segmentos gigantes
-const MAX_STEP = 240; // 4h
-visibleStep = Math.min(visibleStep, MAX_STEP);
+// opcional clamp
+visibleStep = Math.max(30, Math.min(visibleStep, 240));
+
 
 
 
