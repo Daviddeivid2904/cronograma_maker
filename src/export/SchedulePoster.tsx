@@ -289,8 +289,8 @@ visibleStep = Math.max(30, Math.min(visibleStep, 240));
 
       {/* Bloques */}
       <g transform={`translate(${gridLeft}, ${gridTop})`}>
-        {items.map((it, idx) => {
-  // ==== geometría del bloque ====
+{items.map((it, idx) => {
+  // geometría
   const sMin = toMin(it.start);
   const eMin = toMin(it.end);
   const y = (sMin - anchor) * pxPerMin;
@@ -298,56 +298,59 @@ visibleStep = Math.max(30, Math.min(visibleStep, 240));
   const x = it.dayIndex * colW + 2;
   const w = colW - 4;
 
-  // ==== colores ====
   const fg = it.textColor || getTextColorForBg(it.color);
 
-  // ==== tipografías FIJAS para TODOS los bloques ====
+  // tamaños FIJOS
   const PADDING_X = Math.max(16, Math.floor(w * 0.08));
-  const PADDING_TOP = 10;
-  const PADDING_BOTTOM = 10;
+  const PADDING_Y = 10;
   const LINE_GAP = 4;
+  const GROUP_GAP = 8;  // separación entre secciones
 
-  const TITLE_SIZE = 34;       // <-- mismo tamaño en todas las tarjetas
-  const SUBTITLE_SIZE = 18;    // idem
-  const TIME_SIZE = 18;        // la hora al pie, tamaño fijo
+  const TITLE_SIZE = 34;
+  const SUBTITLE_SIZE = 18;
+  const TIME_SIZE = 18;
 
   const cx = x + w / 2;
   const usableW = w - PADDING_X * 2;
-
-  // ==== cuánto alto disponible queda para título/subtítulo si fijo la hora abajo ====
-  const timeBlockH = TIME_SIZE; // sin gap inferior porque va al borde inferior
-  const availableForText = h - PADDING_TOP - PADDING_BOTTOM - timeBlockH - 8; // 8px de separación con la hora
-
-  // Cálculo de cantidad de líneas posibles según alto disponible
-  // reservamos: (nLinesTitle * TITLE_SIZE) + (hasSubtitle ? (LINE_GAP + SUBTITLE_SIZE) : 0) + (nLinesTitle-1)*LINE_GAP <= availableForText
   const hasSubtitle = !!(it.subtitle && it.subtitle.trim());
-  // permitimos hasta 3 líneas de título como máximo práctico
+
+  // alto disponible para todo el stack de texto
+  const available = h - PADDING_Y * 2;
+
+  // número máximo de líneas de título que entran (1..3)
   const maxTitleLinesTheoretical = Math.floor(
-    (availableForText - (hasSubtitle ? (LINE_GAP + SUBTITLE_SIZE) : 0) + LINE_GAP)
+    (available - (hasSubtitle ? (GROUP_GAP + SUBTITLE_SIZE) : 0) - (GROUP_GAP + TIME_SIZE) + LINE_GAP)
     / (TITLE_SIZE + LINE_GAP)
   );
   const maxTitleLines = Math.max(1, Math.min(3, maxTitleLinesTheoretical));
 
+  // construir líneas
   const titleLines = wrapWithEllipsis(String(it.title || ""), TITLE_SIZE, usableW, maxTitleLines);
 
-  // si hay subtítulo, vemos si todavía entra; si no entra, lo omitimos
+  // chequeo si el subtítulo entra, si no lo omitimos
+  const titleBlockH = titleLines.length * TITLE_SIZE + (titleLines.length - 1) * LINE_GAP;
   let showSubtitle = hasSubtitle;
   if (showSubtitle) {
-    const titleBlockH = titleLines.length * TITLE_SIZE + (titleLines.length - 1) * LINE_GAP;
-    const needH = titleBlockH + LINE_GAP + SUBTITLE_SIZE;
-    if (needH > availableForText) showSubtitle = false;
+    const needed = titleBlockH + GROUP_GAP + SUBTITLE_SIZE + GROUP_GAP + TIME_SIZE;
+    if (needed > available) showSubtitle = false;
   }
 
-  // ==== posiciones ====
-  // Título desde arriba
-  let curY = y + PADDING_TOP;
+  // alto total del grupo (centrado verticalmente)
+  const subBlockH = showSubtitle ? (GROUP_GAP + SUBTITLE_SIZE) : 0;
+  const timeBlockH = GROUP_GAP + TIME_SIZE;
+  const totalTextH = titleBlockH + subBlockH + timeBlockH;
 
-  // Título (centrado)
-  const titleTexts = titleLines.map((ln, iLine) => {
-    const ly = curY + TITLE_SIZE * (iLine + 1) + LINE_GAP * iLine;
-    return (
+  const baseY = y + PADDING_Y + Math.max(0, (available - totalTextH) / 2);
+
+  // render
+  const texts: React.ReactNode[] = [];
+
+  // título (centrado)
+  titleLines.forEach((ln, i) => {
+    const ly = baseY + TITLE_SIZE * (i + 1) + LINE_GAP * i;
+    texts.push(
       <text
-        key={`t-${idx}-${iLine}`}
+        key={`t-${idx}-${i}`}
         x={cx}
         y={ly}
         textAnchor="middle"
@@ -361,16 +364,13 @@ visibleStep = Math.max(30, Math.min(visibleStep, 240));
       </text>
     );
   });
-  const titleBlockH = titleLines.length * TITLE_SIZE + (titleLines.length - 1) * LINE_GAP;
-  curY += titleBlockH;
 
-  // Subtítulo (opcional, debajo del título)
-  let subTextNode: React.ReactNode = null;
+  // subtítulo (si entra)
   if (showSubtitle) {
-    curY += LINE_GAP;
-    const ly = curY + SUBTITLE_SIZE; // una sola línea
-    subTextNode = (
+    const ly = baseY + titleBlockH + GROUP_GAP + SUBTITLE_SIZE;
+    texts.push(
       <text
+        key={`s-${idx}`}
         x={cx}
         y={ly}
         textAnchor="middle"
@@ -384,13 +384,13 @@ visibleStep = Math.max(30, Math.min(visibleStep, 240));
         {String(it.subtitle || "")}
       </text>
     );
-    curY += SUBTITLE_SIZE;
   }
 
-  // Hora SIEMPRE pegada al pie del bloque (se “corre” si arriba hay mucho texto)
-  const timeY = y + h - PADDING_BOTTOM; // baseline
-  const timeNode = (
+  // hora (debajo del grupo, no pegada al borde)
+  const timeY = baseY + titleBlockH + (showSubtitle ? (GROUP_GAP + SUBTITLE_SIZE) : 0) + GROUP_GAP + TIME_SIZE;
+  texts.push(
     <text
+      key={`time-${idx}`}
       x={cx}
       y={timeY}
       textAnchor="middle"
@@ -407,12 +407,11 @@ visibleStep = Math.max(30, Math.min(visibleStep, 240));
   return (
     <g key={idx}>
       <rect x={x} y={y} width={w} height={h} rx={8} ry={8} fill={it.color} stroke="#000" strokeWidth="1" />
-      {titleTexts}
-      {subTextNode}
-      {timeNode}
+      {texts}
     </g>
   );
 })}
+
       </g>
 
       {/* Leyenda */}
