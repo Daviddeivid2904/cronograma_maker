@@ -304,11 +304,11 @@ visibleStep = Math.max(30, Math.min(visibleStep, 240));
   const PADDING_X = Math.max(16, Math.floor(w * 0.08));
   const PADDING_Y = 10;
   const LINE_GAP = 4;
-  const GROUP_GAP = 8;  // separación entre secciones
+  const GROUP_GAP = 12;  // separación entre secciones
 
-  const TITLE_SIZE = 34;
-  const SUBTITLE_SIZE = 18;
-  const TIME_SIZE = 18;
+  const TITLE_SIZE = 40;
+  const SUBTITLE_SIZE = 27;
+  const TIME_SIZE = 25;
 
   const cx = x + w / 2;
   const usableW = w - PADDING_X * 2;
