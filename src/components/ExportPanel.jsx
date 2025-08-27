@@ -1,3 +1,4 @@
+// src/panels/ExportPanel.jsx (o donde tengas este componente)
 import React, { useState } from 'react';
 import { posterToPng, posterToPdf, downloadFile, downloadBlob } from '../export/exportImage';
 import { buildScheduleDataFromState } from '../export/buildScheduleData';
@@ -30,6 +31,7 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
       // Siempre usar quantumMin=5 y cellCap=200
       const data = { ...base, tickStepMin: 5, cellCap: 200 };
       const preset = formatPresets[exportFormat];
+
       if (kind === 'png') {
         const png = await posterToPng(data, {
           width: preset.width,
@@ -39,7 +41,17 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
         });
         downloadFile(png, `horario-${exportFormat}.png`);
       } else {
-        const pdf = await posterToPdf(data, { theme, showLegend });
+        // ⚠️ IMPORTANTE: pasamos también width/height y los parámetros de calidad para PDF
+        const pdf = await posterToPdf(data, {
+          width: preset.width,
+          height: preset.height,
+          theme,
+          showLegend,
+          // Ajustá estos dos si querés más/menos nitidez/peso:
+          dpi: 200,          // probá 200–240 (220 es buen equilibrio)
+          jpegQuality: 0.99,// 0.85–0.9 se ve muy bien
+          marginPt: 18,    // dejá 0 para cubrir toda la hoja; poné 18 para ~6mm de margen
+        });
         downloadBlob(pdf, 'horario.pdf');
       }
     } catch (err) {

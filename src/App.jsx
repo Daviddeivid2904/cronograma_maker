@@ -5,6 +5,7 @@ import ActivityList from './components/ActivityList.jsx'
 import SettingsBar from './components/SettingsBar.jsx'
 import WeekGrid from './components/WeekGrid.jsx'
 import ExportPanel from './components/ExportPanel.jsx'
+import AdRail from './components/AdRail.jsx';
 import { computeDaysRange } from './lib/time.js'
 import { saveToStorage, loadFromStorage, STORAGE_KEYS, isStorageAvailable } from './lib/storage.js'
 
@@ -125,74 +126,119 @@ export default function App() {
     lunchEnd: settings.lunchEnd,
   }
 
-  return (
-    <div className="max-w-6xl mx-auto p-5 space-y-5">
-      <header className="flex items-center justify-between">
-      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5238026837919071"
-     crossorigin="anonymous"></script>
-        <div>
-          <h1 className="text-2xl font-bold">Planificador semanal</h1>
-          <p className="text-gray-600">Grilla por celdas: arrastrá, estirá, personalizá y descargá.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowExportPanel(true)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Descargar imagen
-          </button>
-        </div>
-      </header>
+return (
+  <div className="w-full">
+    {/* Contenedor responsive con padding lateral chico en mobile */}
+    <div className="mx-auto w-full max-w-screen-2xl px-3 sm:px-4">
 
-      <ActivityPalette onAdd={handleAddActivity} />
+      {/* En mobile: una sola columna. En desktop: 3 columnas con rails */}
+      <div className="w-full lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1100px)_minmax(0,1fr)] lg:gap-4">
 
-      <WeekGrid
-  activities={activities}
-  config={gridConfig}
-  blocks={blocks}
-  onBlocksChange={setBlocks}
->
-  <ActivityList
-    activities={activities}
-    onAddToGrid={handleAddToGrid}
-    onDelete={handleDeleteActivity}
-  />
-</WeekGrid>
+        {/* IZQUIERDA: tira lateral (solo desktop) */}
+        <aside className="hidden lg:block sticky top-4 self-start">
+          <ins
+            className="adsbygoogle"
+            style={{ display: "block", width: "160px", height: "600px", margin: "0 auto" }}
+            data-ad-client="ca-pub-5238026837919071"
+            data-ad-slot="3734034674"
+            data-ad-format="auto"
+            data-full-width-responsive="true"
+          />
+        </aside>
 
+        {/* CENTRO: app completa */}
+        <main className="min-w-0 w-full">
+          <div className="w-full p-4 sm:p-5 space-y-5 bg-white border border-gray-200 rounded-lg">
 
-      <SettingsBar value={settings} onChange={setSettings} onCreateBreakCard={handleCreateBreakCard} />
+            <header className="flex items-center justify-between">
+              {/* ⚠️ El script de AdSense ponelo en <head> del index.html, no acá */}
+              <div>
+                <h1 className="text-2xl font-bold">Planificador semanal</h1>
+                <p className="text-gray-600">
+                  Grilla por celdas: arrastrá, estirá, personalizá y descargá.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowExportPanel(true)}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Descargar imagen
+                </button>
+              </div>
+            </header>
 
-      {/* Panel de exportación */}
-      {showExportPanel && (
-        <ExportPanel
-          activities={activities}
-          blocks={blocks}
-          config={gridConfig}
-          onClose={() => setShowExportPanel(false)}
-        />
-      )}
+            <ActivityPalette onAdd={handleAddActivity} />
 
-      {/* Botón inferior para exportar */}
-      <div className="pt-4 flex justify-center">
-        <button
-          onClick={() => setShowExportPanel(true)}
-          className="bg-indigo-600 text-white px-5 py-3 rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          Descargar imagen
-        </button>
+            <WeekGrid
+              activities={activities}
+              config={gridConfig}
+              blocks={blocks}
+              onBlocksChange={setBlocks}
+            >
+              <ActivityList
+                activities={activities}
+                onAddToGrid={handleAddToGrid}
+                onDelete={handleDeleteActivity}
+              />
+            </WeekGrid>
+
+            <SettingsBar
+              value={settings}
+              onChange={setSettings}
+              onCreateBreakCard={handleCreateBreakCard}
+            />
+
+            {/* Panel de exportación */}
+            {showExportPanel && (
+              <ExportPanel
+                activities={activities}
+                blocks={blocks}
+                config={gridConfig}
+                onClose={() => setShowExportPanel(false)}
+              />
+            )}
+
+            {/* Botón inferior para exportar */}
+            <div className="pt-4 flex justify-center">
+              <button
+                onClick={() => setShowExportPanel(true)}
+                className="bg-indigo-600 text-white px-5 py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                Descargar imagen
+              </button>
+            </div>
+
+            <footer className="text-center text-xs text-gray-500 pt-4">
+              <a
+                href="https://www.linkedin.com/in/david-lekerman/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-indigo-600 hover:underline"
+                title="LinkedIn de David Lekerman"
+              >
+                by David Lekerman
+              </a>
+            </footer>
+          </div>
+        </main>
+
+        {/* DERECHA: tira lateral (solo desktop) */}
+        <aside className="hidden lg:block sticky top-4 self-start">
+          <ins
+            className="adsbygoogle"
+            style={{ display: "block", width: "160px", height: "600px", margin: "0 auto" }}
+            data-ad-client="ca-pub-5238026837919071"
+            data-ad-slot="1473900517"
+            data-ad-format="auto"
+            data-full-width-responsive="true"
+          />
+        </aside>
+
       </div>
-
-      <footer className="text-center text-xs text-gray-500 pt-4">
-        <a
-          href="https://www.linkedin.com/in/david-lekerman/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-indigo-600 hover:underline"
-          title="LinkedIn de David Lekerman"
-        >
-          by David Lekerman
-        </a>
-      </footer>
     </div>
-  )
+  </div>
+);
+
+
 }

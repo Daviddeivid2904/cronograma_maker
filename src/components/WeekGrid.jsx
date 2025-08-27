@@ -970,6 +970,7 @@ function Cell({ dayIndex, slotIndex, onCellClick, isPlacementArmed }) {
       </div>
 
 
+
       {isPlacementArmed && (
         <div
           className="mt-3 p-3 rounded-xl text-sm flex items-center justify-between"
