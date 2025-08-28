@@ -1,9 +1,9 @@
-// src/panels/ExportPanel.jsx
-import React, { useState, useEffect } from 'react';
+// src/components/ExportPanel.jsx
+import React, { useState } from 'react';
 import { posterToPng, posterToPdf, downloadFile, downloadBlob } from '../export/exportImage';
 import { buildScheduleDataFromState } from '../export/buildScheduleData';
 
-/* ======= UI helpers ======= */
+/* ===================== helpers UI ===================== */
 
 function OptionCard({ label, selected, onClick, children }) {
   return (
@@ -15,87 +15,127 @@ function OptionCard({ label, selected, onClick, children }) {
       aria-pressed={selected}
       title={label}
     >
-      <div className="w-24 h-16 flex items-center justify-center">{children}</div>
+      <div className="w-28 h-20 overflow-hidden rounded-sm">{children}</div>
       <span className="mt-1 text-[11px] leading-tight text-center text-gray-800">{label}</span>
     </button>
   );
 }
 
-// Preview geométrico simple según formato
-function FormatPreview({ kind }) {
-  const style =
-    kind === 'a4'
-      ? { width: 36, height: 54 }
-      : kind === 'widescreen'
-      ? { width: 54, height: 30 }
-      : { width: 40, height: 40 }; // square
+/* ===================== Previews con SVG (auto-contenidos) ===================== */
+
+// Colores representativos por tema (coinciden con tu idea de classic/light/pastel)
+function getThemePreviewColors(theme) {
+  if (theme === 'light') {
+    return {
+      headerBg: '#F3F4F6', headerText: '#111827',
+      grid: '#D1D5DB', border: '#9CA3AF',
+      block1: '#BFDBFE', block2: '#FDE68A', block3: '#E5E7EB'
+    };
+  }
+  if (theme === 'pastel') {
+    return {
+      headerBg: '#F8FAFC', headerText: '#0F172A',
+      grid: '#CBD5E1', border: '#94A3B8',
+      block1: '#FBCFE8', block2: '#BBF7D0', block3: '#BFDBFE'
+    };
+  }
+  // classic
+  return {
+    headerBg: '#FFFFFF', headerText: '#0F172A',
+    grid: '#000000', border: '#000000',
+    block1: '#FDE68A', block2: '#BFDBFE', block3: '#FECACA'
+  };
+}
+
+// Dibuja una mini “hoja” con cabecera y grilla; aspect: 'a4' | 'widescreen' | 'square'
+function MiniPosterSVG({ theme, aspect }) {
+  const { headerBg, headerText, grid, border, block1, block2, block3 } = getThemePreviewColors(theme);
+
+  // Tamaño base del SVG (solo para preview)
+  const dims =
+    aspect === 'a4'        ? { w: 140, h: 198 } :
+    aspect === 'widescreen' ? { w: 168, h: 95 } :
+                              { w: 124, h: 124 };
+
+  const { w, h } = dims;
+  const pad = 6;
+  const headerH = Math.max(14, Math.round(h * 0.16));
+  const leftColW = Math.max(16, Math.round(w * 0.18));
+  const gridX = pad + leftColW;
+  const gridY = pad + headerH;
+  const gridW = w - pad * 2 - leftColW;
+  const gridH = h - pad * 2 - headerH;
+
+  // líneas de división (3×4 aprox)
+  const rows = 4, cols = 5;
+
   return (
-    <div
-      className="bg-gray-100 border border-gray-400 rounded-sm shadow-inner"
-      style={style}
-      aria-hidden
-    />
+    <svg width="100%" height="100%" viewBox={`0 0 ${w} ${h}`} xmlns="http://www.w3.org/2000/svg">
+      {/* fondo */}
+      <rect x="0" y="0" width={w} height={h} fill="#ffffff" />
+
+      {/* borde */}
+      <rect x={pad} y={pad} width={w - pad*2} height={h - pad*2} fill="#fff" stroke={border} strokeWidth="1.5" />
+
+      {/* cabecera de días */}
+      <rect x={gridX} y={pad} width={gridW} height={headerH} fill={headerBg} stroke={border} strokeWidth="1" />
+      {/* columna de horas */}
+      <rect x={pad} y={gridY} width={leftColW} height={gridH} fill="#fff" stroke={border} strokeWidth="1" />
+
+      {/* grilla */}
+      <rect x={gridX} y={gridY} width={gridW} height={gridH} fill="#fff" stroke={border} strokeWidth="1" />
+      {Array.from({length: cols-1}).map((_,i)=>(
+        <line key={'v'+i}
+          x1={gridX + (gridW/cols)*(i+1)} y1={gridY}
+          x2={gridX + (gridW/cols)*(i+1)} y2={gridY+gridH}
+          stroke={grid} strokeWidth="0.8" />
+      ))}
+      {Array.from({length: rows-1}).map((_,i)=>(
+        <line key={'h'+i}
+          x1={gridX} y1={gridY + (gridH/rows)*(i+1)}
+          x2={gridX+gridW} y2={gridY + (gridH/rows)*(i+1)}
+          stroke={grid} strokeWidth="0.8" />
+      ))}
+
+      {/* bloques de ejemplo */}
+      <rect x={gridX + 2} y={gridY + 2} width={gridW/cols - 4} height={gridH/rows - 4} rx="3" fill={block1} stroke={border} strokeWidth="0.8" />
+      <rect x={gridX + (gridW/cols)*2 + 2} y={gridY + (gridH/rows) + 2} width={gridW/cols - 4} height={gridH/rows - 4} rx="3" fill={block2} stroke={border} strokeWidth="0.8" />
+      <rect x={gridX + (gridW/cols)*4 - (gridW/cols) + 2} y={gridY + (gridH/rows)*2 + 2} width={gridW/cols - 4} height={gridH/rows - 4} rx="3" fill={block3} stroke={border} strokeWidth="0.8" />
+
+      {/* título pequeñito para diferenciar aún más los temas (color de texto cambia) */}
+      <text x={w/2} y={pad + headerH/2} textAnchor="middle" dominantBaseline="central"
+        fontFamily="Inter, system-ui, Arial" fontSize="6.5" fill={headerText}>Demo</text>
+    </svg>
   );
 }
 
-// Mini “grid” para mostrar estilo del tema
-function ThemePreview({ theme }) {
-  // Colores representativos por tema (no es render real; es indicativo)
-  const palette = {
-    classic: ['#111827', '#E5E7EB', '#FDE68A', '#BFDBFE'],
-    light: ['#9CA3AF', '#F3F4F6', '#FDE68A', '#E5E7EB'],
-    pastel: ['#94A3B8', '#F8FAFC', '#FBCFE8', '#A7F3D0'],
-  }[theme] || ['#111827', '#E5E7EB', '#FDE68A', '#BFDBFE'];
-
-  return (
-    <div className="w-full h-full grid grid-cols-4 gap-[2px]">
-      <div className="h-3" style={{ background: palette[0] }} />
-      <div className="h-3" style={{ background: palette[1] }} />
-      <div className="h-3" style={{ background: palette[2] }} />
-      <div className="h-3" style={{ background: palette[3] }} />
-      <div className="h-3 col-span-4" style={{ background: palette[1] }} />
-      <div className="h-3 col-span-1" style={{ background: palette[2] }} />
-      <div className="h-3 col-span-1" style={{ background: palette[3] }} />
-      <div className="h-3 col-span-1" style={{ background: palette[2] }} />
-      <div className="h-3 col-span-1" style={{ background: palette[3] }} />
-    </div>
-  );
-}
-
-/* ======= Panel ======= */
+/* ===================== Panel principal ===================== */
 
 export default function ExportPanel({ activities, blocks, config, onClose }) {
   const [isExporting, setIsExporting] = useState(false);
-  const [exportFormat, setExportFormat] = useState('square');
-  const [theme, setTheme] = useState('classic');
+  const [exportFormat, setExportFormat] = useState('square'); // 'a4' | 'widescreen' | 'square'
+  const [theme, setTheme] = useState('classic');              // 'classic' | 'light' | 'pastel'
   const [showLegend, setShowLegend] = useState(false);
   const [title, setTitle] = useState('Mi Horario Semanal');
   const [subtitle, setSubtitle] = useState('Planificador de Actividades');
 
-  // Presets
   const formatPresets = {
-    a4: { width: 2480, height: 3508, name: 'A4 (2480×3508)' },
+    a4:         { width: 2480, height: 3508, name: 'A4 (2480×3508)' },
     widescreen: { width: 2560, height: 1440, name: '16:9 (2560×1440)' },
-    square: { width: 2048, height: 2048, name: 'Cuadrado (2048×2048)' },
+    square:     { width: 2048, height: 2048, name: 'Cuadrado (2048×2048)' },
   };
 
   const themes = [
-    { value: 'classic', name: 'Clásico', description: 'Bordes negros' },
-    { value: 'light', name: 'Claro', description: 'Líneas grises' },
-    { value: 'pastel', name: 'Pastel', description: 'Suave' },
+    { value: 'classic', name: 'Clásico' },
+    { value: 'light',   name: 'Claro'   },
+    { value: 'pastel',  name: 'Pastel'  },
   ];
-
-  // Inicializa ads (si usás AdSense en el modal)
-  useEffect(() => {
-    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch {}
-  }, []);
 
   async function doExport(kind) {
     if (isExporting) return;
     setIsExporting(true);
     try {
       const base = buildScheduleDataFromState(activities, blocks, config, title, subtitle);
-      // Siempre usar quantumMin=5 y cellCap=200
       const data = { ...base, tickStepMin: 5, cellCap: 200 };
       const preset = formatPresets[exportFormat];
 
@@ -113,9 +153,9 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
           height: preset.height,
           theme,
           showLegend,
-          dpi: 200,          // subí a 240–300 si querés más nitidez
-          jpegQuality: 0.99, // 0.9–0.95 suele ser suficiente
-          marginPt: 18,      // 18pt ~ 6mm
+          dpi: 240,
+          jpegQuality: 0.93,
+          marginPt: 18,
         });
         downloadBlob(pdf, 'horario.pdf');
       }
@@ -154,7 +194,7 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
             />
           </div>
 
-          {/* Formato con previews */}
+          {/* Formato con previews (varía proporción, respeta tema actual) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Formato</label>
             <div className="grid grid-cols-3 gap-2">
@@ -165,29 +205,29 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
                   selected={exportFormat === key}
                   onClick={() => setExportFormat(key)}
                 >
-                  <FormatPreview kind={key} />
+                  <MiniPosterSVG theme={theme} aspect={key} />
                 </OptionCard>
               ))}
             </div>
           </div>
 
-          {/* Tema con previews */}
+          {/* Tema con previews (varía colores, respeta el formato elegido) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Tema</label>
             <div className="grid grid-cols-3 gap-2">
               {themes.map(t => (
                 <OptionCard
                   key={t.value}
-                  label={`${t.name}`}
+                  label={t.name}
                   selected={theme === t.value}
                   onClick={() => setTheme(t.value)}
                 >
-                  <ThemePreview theme={t.value} />
+                  <MiniPosterSVG theme={t.value} aspect={exportFormat} />
                 </OptionCard>
               ))}
             </div>
             <p className="text-[11px] text-gray-500 mt-1">
-              La preview es referencial; el render final usa tus datos actuales.
+              La preview es referencial; el archivo final usa tus actividades actuales.
             </p>
           </div>
 
