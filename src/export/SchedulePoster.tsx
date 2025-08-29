@@ -1,5 +1,7 @@
 import React from 'react';
 import { PosterProps } from './types';
+import { RenderDecoration } from './decorations';
+
 import { 
   getThemeColors,
   getTextColorForBg
@@ -82,7 +84,7 @@ export default function SchedulePoster({
   const items = data.items ?? [];
 
   // Layout
-  const margin = 64;
+  const margin = 200;
   const headerH = 140;
   const daysHeaderH = 72;
   const legendH = showLegend ? 96 : 0;
@@ -92,6 +94,7 @@ export default function SchedulePoster({
   const leftColW = 240; // columna de horas
   const gridLeft = margin + leftColW;
   const gridW = contentW - leftColW;
+  
 
   const colW = gridW / days.length;
   const borderColor = '#000';
@@ -163,6 +166,8 @@ visibleStep = Math.max(30, Math.min(visibleStep, 240));
   // Escala en px por minuto y utilitario de posición exacta
   const yOfMinExact = (min: number) => gridTop + (min - anchor) * pxPerMin;
 
+  const gridRect = { x: gridLeft, y: gridTop, w: gridW, h: gridH };
+
   // Leyenda (materia→color)
   const legend = (() => {
     const map = new Map<string,string>();
@@ -176,9 +181,18 @@ visibleStep = Math.max(30, Math.min(visibleStep, 240));
       height={height} 
       viewBox={`0 0 ${width} ${height}`}
       xmlns="http://www.w3.org/2000/svg"
+      xmlnsXlink="http://www.w3.org/1999/xlink"   // 👈  NECESARIO PARA <image xlink:href=…>
     >
       {/* Fondo */}
       <rect width={width} height={height} fill="#ffffff" />
+      {/* Decoración de marco (usa el prop theme como nombre de decoración) */}
+<RenderDecoration
+          name={theme as any}
+          width={width}
+          height={height}
+          grid={gridRect}
+        />
+
 
       {/* Header centrado */}
       <g transform={`translate(${width/2}, ${margin})`}>
@@ -430,6 +444,14 @@ visibleStep = Math.max(30, Math.min(visibleStep, 240));
       {watermark && (
         <text x={width - margin} y={height - margin} fontSize={16} textAnchor="end" fill="#94a3b8" fontFamily="Inter, system-ui, Arial">{watermark}</text>
       )}
+      <g pointerEvents="none">
+<RenderDecoration
+          name={theme as any}
+          width={width}
+          height={height}
+          grid={gridRect}
+        />
+</g>
     </svg>
   );
 }

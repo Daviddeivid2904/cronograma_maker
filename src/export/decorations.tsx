@@ -1,154 +1,335 @@
 // src/export/decorations.tsx
-import React from 'react';
+import React from "react";
 
-export type DecorationName = 'none' | 'flowers' | 'medical' | 'science';
+/** Nombres de “temas” de decoración */
+export type DecorationName = "none" | "flowers" | "medical" | "science" | "snoopy";
 
-/**
- * Dibuja un marco decorativo vectorial, escalable a cualquier width/height.
- * Se pinta DETRÁS del contenido (vos lo montás antes de la grilla).
- */
+/** Límite de la grilla real (donde está el calendario) */
+export type GridRect = { x: number; y: number; w: number; h: number };
+
+export type RenderProps = {
+  name: DecorationName;
+  width: number;   // tamaño total del poster (no hace falta usarlo)
+  height: number;  // tamaño total del poster (no hace falta usarlo)
+  grid: GridRect;  // límites exactos de la grilla (se usa para anclar)
+  margin?: number; // por si querés pad opcional
+};
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+/** Convierte a URL absoluta dentro de /public */
+function resolvePublic(path: string): string {
+  const p = path.startsWith("/") ? path.slice(1) : path;
+  return new URL(p, document.baseURI).toString();
+}
+
+/** Helper: ancla a un borde/esquina de la grilla y devuelve un punto base */
+function place(
+  grid: GridRect,
+  anchor:
+    | "top-left" | "top-center" | "top-right"
+    | "left-center" | "right-center"
+    | "bottom-left" | "bottom-center" | "bottom-right",
+  dx = 0,
+  dy = 0
+) {
+  const { x, y, w, h } = grid;
+  switch (anchor) {
+    case "top-left":      return { x: x + dx,       y: y + dy };
+    case "top-center":    return { x: x + w / 2 + dx, y: y + dy };
+    case "top-right":     return { x: x + w + dx,   y: y + dy };
+    case "left-center":   return { x: x + dx,       y: y + h / 2 + dy };
+    case "right-center":  return { x: x + w + dx,   y: y + h / 2 + dy };
+    case "bottom-left":   return { x: x + dx,       y: y + h + dy };
+    case "bottom-center": return { x: x + w / 2 + dx, y: y + h + dy };
+    case "bottom-right":  return { x: x + w + dx,   y: y + h + dy };
+  }
+}
+
+/** ===== Render principal (sin máscaras ni recortes) ===== */
 export function RenderDecoration({
   name,
   width,
   height,
-  margin = 24, // deja un borde interior para que no tape la grilla
+  grid,
+  margin = 0,
+}: RenderProps): JSX.Element | null {
+  if (name === "none") return null;
+
+  // lado corto de la grilla para escalar decoraciones
+  const s = Math.min(grid.w, grid.h);
+
+  // definimos un sprite simple para FLORES y lo clonamos con <use/>
+  const flowerId = `flower-sprite-${Math.random().toString(36).slice(2)}`;
+
+  return (
+    <g pointerEvents="none">
+      <defs>
+        <image
+          id={flowerId}
+          href={resolvePublic("/decors/flores/flores.png")}
+          x="0"
+          y="0"
+          width="256"
+          height="256"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </defs>
+
+      {name === "flowers" && <Flowers grid={grid} s={s} spriteId={flowerId} />}
+      {name === "medical" && <Medical grid={grid} s={s} pad={margin} />}
+      {name === "science" && <Science grid={grid} s={s} pad={margin}/>}
+      {name === "snoopy" && <Snoopy grid={grid} s={s} pad={margin} />}
+    </g>
+  );
+}
+
+/* ===================== FLORES ===================== */
+function Flowers({
+  grid,
+  s,
+  spriteId,
 }: {
-  name: DecorationName;
-  width: number;
-  height: number;
-  margin?: number;
+  grid: GridRect;
+  s: number;
+  spriteId: string;
 }) {
-  if (name === 'none') return null;
+  const big = clamp(s * 0.42, 160, 520);
+  const mid = clamp(s * 0.26, 120, 360);
+  const tiny = clamp(s * 0.12, 60, 120);
 
-  const W = width;
-  const H = height;
-  const x0 = margin;
-  const y0 = margin;
-  const x1 = W - margin;
-  const y1 = H - margin;
+  const UseFlower = ({
+    cx,
+    cy,
+    w,
+    rotate = 0,
+    opacity = 1,
+  }: {
+    cx: number;
+    cy: number;
+    w: number;
+    rotate?: number;
+    opacity?: number;
+  }) => {
+    const scale = w / 256;
+    const x = cx - w / 2;
+    const y = cy - w / 2;
+    const tfm = `translate(${x} ${y}) scale(${scale}) rotate(${rotate} ${w / 2} ${w / 2})`;
+    // @ts-ignore xlinkHref para compatibilidad
+    return <use href={`#${spriteId}`} xlinkHref={`#${spriteId}`} transform={tfm} opacity={opacity} />;
+  };
 
-  switch (name) {
-    case 'flowers':
-      return (
-        <g opacity={0.95}>
-          {/* marco fino */}
-          <rect x={x0} y={y0} width={x1 - x0} height={y1 - y0} rx={12} ry={12} fill="none" stroke="#d97706" strokeWidth={3} />
-          {/* esquinas estilo geométrico */}
-          {cornerLines('#d97706', x0, y0, x1, y1, 18)}
-          {/* ramilletes: arriba derecha y abajo izquierda */}
-          {flowersCluster(x1 - 80, y0 + 30, 1.0)}
-          {flowersCluster(x0 + 50, y1 - 40, 0.9, true)}
-        </g>
-      );
+  // esquinas pegadas a la grilla
+  const tl = place(grid, "top-left", -big * 0.18, -big * 0.12);
+  const br = place(grid, "bottom-right", big * 0.18, big * 0.12);
+  // laterales
+  const lc = place(grid, "left-center", -mid * 0.38, 0);
+  const rc = place(grid, "right-center", mid * 0.38, 0);
 
-    case 'medical':
-      return (
-        <g opacity={0.95}>
-          {/* marco recto */}
-          <rect x={x0} y={y0} width={x1 - x0} height={y1 - y0} rx={10} ry={10} fill="none" stroke="#ef4444" strokeWidth={3} />
-          {/* cruzes médicas distribuidas */}
-          {medicalIcons(x0, y0, x1, y1)}
-        </g>
-      );
+  // anillo suave alrededor
+  const cx0 = grid.x + grid.w / 2;
+  const cy0 = grid.y + grid.h / 2;
+  const rad = Math.min(grid.w, grid.h) * 0.55;
 
-    case 'science':
-      return (
-        <g opacity={0.95}>
-          {/* marco discontinuo */}
-          <rect x={x0} y={y0} width={x1 - x0} height={y1 - y0} rx={12} ry={12}
-                fill="none" stroke="#0ea5e9" strokeWidth={3} strokeDasharray="10 6" />
-          {/* átomos / matraces estilizados */}
-          {scienceIcons(x0, y0, x1, y1)}
-        </g>
-      );
-
-    default:
-      return null;
-  }
-}
-
-/* ---------- helpers visuales ---------- */
-
-function cornerLines(color: string, x0: number, y0: number, x1: number, y1: number, len: number) {
   return (
-    <g stroke={color} strokeWidth={3}>
-      {/* TL */}
-      <line x1={x0} y1={y0 + len} x2={x0} y2={y0} />
-      <line x1={x0} y1={y0} x2={x0 + len} y2={y0} />
-      {/* TR */}
-      <line x1={x1} y1={y0 + len} x2={x1} y2={y0} />
-      <line x1={x1 - len} y1={y0} x2={x1} y2={y0} />
-      {/* BL */}
-      <line x1={x0} y1={y1 - len} x2={x0} y2={y1} />
-      <line x1={x0} y1={y1} x2={x0 + len} y2={y1} />
-      {/* BR */}
-      <line x1={x1} y1={y1 - len} x2={x1} y2={y1} />
-      <line x1={x1 - len} y1={y1} x2={x1} y2={y1} />
-    </g>
+    <>
+      <UseFlower cx={tl.x} cy={tl.y} w={big} rotate={-8} />
+      <UseFlower cx={br.x} cy={br.y} w={big} rotate={172} />
+      <UseFlower cx={lc.x} cy={lc.y} w={mid} rotate={-14} />
+      <UseFlower cx={rc.x} cy={rc.y} w={mid} rotate={10} />
+
+      {Array.from({ length: 10 }).map((_, i) => {
+        const ang = (i * 360) / 10;
+        const r = (ang * Math.PI) / 180;
+        const cx = cx0 + Math.cos(r) * rad;
+        const cy = cy0 + Math.sin(r) * rad;
+        return (
+          <UseFlower
+            key={i}
+            cx={cx}
+            cy={cy}
+            w={tiny}
+            rotate={i * 22}
+            opacity={0.22}
+          />
+        );
+      })}
+    </>
   );
 }
 
-function flowersCluster(cx: number, cy: number, s = 1, flip = false) {
-  const k = flip ? -1 : 1;
-  return (
-    <g transform={`translate(${cx},${cy}) scale(${s})`}>
-      {/* hojas */}
-      <path d={`M ${-40*k},0 C ${-20*k},-30 ${10*k},-30 ${30*k},0`} fill="none" stroke="#16a34a" strokeWidth={3} />
-      <path d={`M ${-30*k},10 C ${-10*k},-10 ${10*k},-5 ${25*k},15`} fill="none" stroke="#16a34a" strokeWidth={3} />
-      {/* flor principal */}
-      <circle cx={0} cy={0} r={14} fill="#ec4899" opacity={0.85}/>
-      <circle cx={3} cy={-2} r={5} fill="#f59e0b" />
-      {/* pétalos */}
-      <ellipse cx={-10} cy={-8} rx={8} ry={5} fill="#f472b6" />
-      <ellipse cx={10} cy={-6} rx={7} ry={5} fill="#f472b6" />
-      <ellipse cx={-6} cy={8} rx={8} ry={5} fill="#f472b6" />
-      <ellipse cx={10} cy={8} rx={7} ry={4} fill="#f472b6" />
-    </g>
-  );
-}
+/* ===================== MÉDICO ===================== */
+function Medical({ grid, s, pad }: { grid: GridRect; s: number; pad: number }) {
+  const big = clamp(s * 0.34, 200, 440);
+  const mid = clamp(s * 0.20, 120, 260);
 
-function medicalIcons(x0: number, y0: number, x1: number, y1: number) {
-  const pts = [
-    [x0 + 40, y0 + 40],
-    [x1 - 40, y0 + 50],
-    [x0 + 60, y1 - 50],
-    [x1 - 60, y1 - 40],
-  ];
+  // anclas “pegadas” a la grilla (independiente del formato)
+  const tr = place(grid, "top-right");
+  const tl = place(grid, "top-left");
+  const br = place(grid, "bottom-right");
+  const bl = place(grid, "bottom-left");
+  const rc = place(grid, "right-center");
+  const lc = place(grid, "left-center");
+
   return (
-    <g>
-      {pts.map(([x, y], i) => (
-        <g key={i} transform={`translate(${x},${y})`}>
-          {/* cruz */}
-          <rect x={-10} y={-3} width={20} height={6} fill="#ef4444" />
-          <rect x={-3} y={-10} width={6} height={20} fill="#ef4444" />
-          {/* circ contorno */}
-          <circle cx={0} cy={0} r={16} fill="none" stroke="#ef4444" strokeWidth={2} opacity={0.6}/>
-        </g>
-      ))}
-      {/* estetoscopio simple */}
-      <path
-        d={`M ${x0 + 90},${y0 + 70} q 30,40 0,80 q -15,20 -35,0`}
-        fill="none" stroke="#ef4444" strokeWidth={3} strokeLinecap="round"
+    <>
+      {/* doctor arriba-derecha, pegado a la grilla */}
+      <image
+        href={resolvePublic("/decors/medicina/medico.png")}
+        x={tr.x - mid + pad}
+        y={tr.y - 1.25* mid - pad}
+        width={mid}
+        height={mid}
       />
-    </g>
+
+      {/* corazón arriba-izquierda */}
+      <image
+        href={resolvePublic("/decors/medicina/corazon.png")}
+        x={tl.x - mid - pad}
+        y={tl.y - mid - pad}
+        width={mid}
+        height={mid}
+        transform={`rotate(-8 ${tl.x - mid / 2} ${tl.y + mid / 2})`}
+      />
+
+      {/* gotero sangre abajo-derecha */}
+      <image
+        href={resolvePublic("/decors/medicina/sangre.png")}
+        x={br.x + pad}
+        y={br.y + pad}
+        width={mid}
+        height={mid}
+        transform={`rotate(-10 ${br.x - mid / 2} ${br.y - mid / 2})`}
+      />
+
+      {/* jeringa abajo-izquierda */}
+      <image
+        href={resolvePublic("/decors/medicina/inyeccion.png")}
+        x={bl.x - mid - pad}
+        y={bl.y + pad}
+        width={mid}
+        height={mid}
+        transform={`rotate(14 ${bl.x + pad + mid / 2} ${bl.y - pad - mid / 2})`}
+      />
+
+      {/* stetoscopio centro derecha */}
+      <image
+        href={resolvePublic("/decors/medicina/stetoscopio.png")}
+        x={rc.x - 0.8*mid}
+        y={rc.y - 2*mid}
+        width={mid}
+        height={mid}
+        transform={`rotate(14 ${bl.x + pad + mid / 2} ${bl.y - pad - mid / 2})`}
+      />
+    </>
   );
 }
 
-function scienceIcons(x0: number, y0: number, x1: number, y1: number) {
+/* ===================== CIENTÍFICO ===================== */
+function Science({ grid, s, pad }: { grid: GridRect; s: number; pad: number }) {
+  const big = clamp(s * 0.30, 180, 380);
+  const mid = clamp(s * 0.18, 110, 240);
+
+  const tl = place(grid, "top-left");
+  const tr = place(grid, "top-right");
+  const bl = place(grid, "bottom-left");
+  const br = place(grid, "bottom-right");
+  const lc = place(grid, "left-center");
+  const rc = place(grid, "right-center");
+
   return (
-    <g>
-      {/* átomo */}
-      <g transform={`translate(${x0 + 70},${y0 + 60})`}>
-        <ellipse rx="26" ry="12" fill="none" stroke="#0ea5e9" strokeWidth="2.5" />
-        <ellipse rx="26" ry="12" transform="rotate(60)" fill="none" stroke="#0ea5e9" strokeWidth="2.5" />
-        <ellipse rx="26" ry="12" transform="rotate(-60)" fill="none" stroke="#0ea5e9" strokeWidth="2.5" />
-        <circle r="4" fill="#0ea5e9" />
-      </g>
-      {/* matraz */}
-      <g transform={`translate(${x1 - 80},${y1 - 70})`}>
-        <path d="M -10,-25 h 20 v 6 l 6,16 a 26,26 0 0 1 -32,0 l 6,-16 z" fill="#bae6fd" stroke="#0ea5e9" strokeWidth="2.5"/>
-        <path d="M -6,-19 h 12" stroke="#0ea5e9" strokeWidth="2"/>
-      </g>
-    </g>
+    <>
+      <image href={resolvePublic("/decors/cientifico/atomo.png")}    
+      x={lc.x - 1.85* mid}
+      y={lc.y + mid}     
+      width={mid} 
+      height={mid} />
+      <image href={resolvePublic("/decors/cientifico/bacteria.png")} 
+      x={rc.x - 0.15*mid}
+      y={rc.y - 2*mid}      
+      width={mid} height={mid} />
+      <image href={resolvePublic("/decors/cientifico/cadena.png")}   
+      x={br.x *0.96 - pad}
+      y={br.y *0.96- pad} 
+      width={mid} 
+      height={mid} />
+      <image href={resolvePublic("/decors/cientifico/micro.png")}    
+      x={tr.x - mid + pad}
+      y={tr.y - 1.25*mid - pad}  
+      width={mid} 
+      height={mid} />
+      <image href={resolvePublic("/decors/cientifico/lupa.png")}    
+      x={bl.x - mid - pad}
+      y={bl.y + pad}
+      width={mid} 
+      height={mid} />
+      <image href={resolvePublic("/decors/cientifico/muestras.png")} 
+      x={tl.x - mid - pad}
+      y={tl.y - 1.2* mid - pad}
+      width={mid} 
+      height={mid} />
+    </>
   );
 }
+
+/* ===================== SNOOPY ===================== */
+function Snoopy({ grid, s, pad }: { grid: GridRect; s: number; pad: number }) {
+  const big = clamp(s * 0.34, 200, 440);
+  const mid = clamp(s * 0.20, 120, 260);
+
+  // anclas “pegadas” a la grilla (independiente del formato)
+  const tr = place(grid, "top-right");
+  const tl = place(grid, "top-left");
+  const br = place(grid, "bottom-right");
+  const bl = place(grid, "bottom-left");
+  const rc = place(grid, "right-center");
+  const lc = place(grid, "left-center");
+
+  return (
+    <>
+      {/* snoopy principal pegado al borde inferior */}
+      <image href={resolvePublic("/decors/snoopy/peek.png")} 
+        x={tr.x - mid + pad}
+        y={tr.y - 0.95 * mid - pad}
+        width={mid}
+        height={mid}
+      />
+
+      {/* snoopy acostado arriba-derecha */}
+      <image href={resolvePublic("/decors/snoopy/main.png")} 
+        x={tl.x - mid - pad}
+        y={tl.y - mid - pad}
+        width={mid}
+        height={mid}
+      />
+
+      {/* snoopy asomado izquierda */}
+      <image href={resolvePublic("/decors/snoopy/asomado.png")} 
+        x={lc.x - 1.77* mid}
+        y={lc.y + mid}
+        width={mid}
+        height={mid}
+      />
+
+      {/* snoopy apoyado derecha */}
+      <image href={resolvePublic("/decors/snoopy/apoyado.png")} 
+        x={rc.x - 0.3* mid}
+        y={rc.y - mid}
+        width={mid}
+        height={mid}
+      />
+
+      {/* woodstock derecha abajo */}
+      <image href={resolvePublic("/decors/snoopy/woodstock.png")} 
+        x={br.x + pad}
+        y={br.y + pad}
+        width={mid}
+        height={mid}
+      />
+    </>
+  );
+}
+
+export default RenderDecoration;

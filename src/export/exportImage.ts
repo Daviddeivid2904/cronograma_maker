@@ -1,12 +1,62 @@
 // src/export/exportImage.ts
 import SchedulePoster from './SchedulePoster';
-import { ScheduleData, ExportOptions } from './types';
+import type { ScheduleData, ThemeName } from './types';
 
-// ================== PNG (desde SVG) ==================
+/* ---------- Util: embebe <image href="..."> como data:URI en el SVG ---------- */
+async function inlineImageHrefs(svg: string): Promise<string> {
+  const hrefRegex = /(xlink:href|href)\s*=\s*["']([^"']+)["']/gi;
+  const urls = new Set<string>();
+  let m: RegExpExecArray | null;
 
+  while ((m = hrefRegex.exec(svg))) {
+    const url = m[2];
+    if (/^data:/i.test(url)) continue;
+    if (/^https?:|^\//i.test(url)) urls.add(url);
+  }
+  if (!urls.size) return svg;
+
+  const urlToDataUri = new Map<string, string>();
+  for (const u of urls) {
+    try {
+      const abs = new URL(u.startsWith('/') ? u.slice(1) : u, document.baseURI).toString();
+      const res = await fetch(abs, { mode: 'cors' });
+      const blob = await res.blob();
+      const dataUri = await new Promise<string>((resolve) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result as string);
+        fr.readAsDataURL(blob);
+      });
+      urlToDataUri.set(u, dataUri);
+    } catch (err) {
+      console.warn('No se pudo inlinear imagen del SVG:', u, err);
+    }
+  }
+
+  return svg.replace(hrefRegex, (full, attr, url) => {
+    const data = urlToDataUri.get(url);
+    return data ? `${attr}="${data}"` : full;
+  });
+}
+
+/* ============= Tipos locales de export (aceptan ThemeName) ============= */
+type AnyThemeOpts = {
+  width?: number;
+  height?: number;
+  theme?: ThemeName;
+  showLegend?: boolean;
+  watermark?: string;
+  // PDF:
+  dpi?: number;
+  jpegQuality?: number;
+  oversample?: number;
+  marginPt?: number;
+  compression?: 'FAST' | 'MEDIUM' | 'SLOW';
+};
+
+/* ================== PNG (desde SVG) ================== */
 export async function posterToPng(
   data: ScheduleData,
-  opts: ExportOptions = {}
+  opts: AnyThemeOpts = {}
 ): Promise<string> {
   const {
     width = 2480,
@@ -16,19 +66,36 @@ export async function posterToPng(
     watermark,
   } = opts;
 
-  // Render a string (SSR) del SVG
   const ReactDOMServer = await import('react-dom/server');
+
+  // Render React → SVG string (theme casteado por si viene string desde fuera)
   const poster = SchedulePoster({
     data,
     width,
     height,
-    theme,
+    theme: theme as ThemeName,
     showLegend,
     watermark,
   });
-  const svgString = ReactDOMServer.renderToString(poster);
+  let svgString = ReactDOMServer.renderToString(poster);
 
-  // Llevar a <img/> y dibujar en canvas
+  // Namespaces en <svg>
+  if (!/xmlns=/.test(svgString)) {
+    svgString = svgString.replace(
+      /<svg/i,
+      `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"`
+    );
+  } else if (!/xmlns:xlink=/.test(svgString)) {
+    svgString = svgString.replace(
+      /<svg([^>]+)>/,
+      `<svg$1 xmlns:xlink="http://www.w3.org/1999/xlink">`
+    );
+  }
+
+  // Inline imágenes
+  svgString = await inlineImageHrefs(svgString);
+
+  // SVG → Canvas
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('No se pudo obtener contexto de canvas');
@@ -37,23 +104,21 @@ export async function posterToPng(
   canvas.height = height;
 
   const img = new Image();
-  const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+  (img as any).crossOrigin = 'anonymous';
+  const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(svgBlob);
 
-  return new Promise((resolve, reject) => {
-    img.onload = async () => {
+  return new Promise<string>((resolve, reject) => {
+    img.onload = () => {
       try {
-        await img.decode();
-        // Fondo blanco por si el SVG tiene transparencia
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const pngDataUrl = canvas.toDataURL('image/png');
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
         URL.revokeObjectURL(url);
-        resolve(pngDataUrl);
-      } catch (err) {
+        resolve(canvas.toDataURL('image/png'));
+      } catch (e) {
         URL.revokeObjectURL(url);
-        reject(err);
+        reject(e);
       }
     };
     img.onerror = () => {
@@ -64,17 +129,7 @@ export async function posterToPng(
   });
 }
 
-// ================== PDF (respeta el formato elegido) ==================
-
-/**
- * Genera un PDF cuya página tiene la MISMA proporción que `width`×`height` que le pasás.
- * - Si pasás 2480×3508 → página vertical (tipo A4).
- * - Si pasás 2560×1440 → página horizontal 16:9.
- * - Si pasás 2048×2048 → página cuadrada.
- *
- * `dpi` controla cuántos píxeles convertimos a puntos PDF (72 pt = 1").
- * `oversample` dibuja más grande y hace downscale para afinar bordes.
- */
+/* ================== PDF (respeta el formato elegido) ================== */
 export async function posterToPdf(
   data: any,
   {
@@ -83,111 +138,90 @@ export async function posterToPdf(
     theme = 'light',
     showLegend = false,
     watermark,
-    dpi = 240,             // 200–300 recomendado
-    jpegQuality = 0.93,    // 0.9 suele estar perfecto
-    oversample = 1.3,      // 1.0=off | 1.2–1.5 mejora bordes
-    marginPt = 0,          // márgenes en puntos PDF (1/72")
-    compression = 'SLOW',  // 'FAST' | 'MEDIUM' | 'SLOW'
-  }: {
-    width?: number;
-    height?: number;
-    theme?: 'classic' | 'light' | 'pastel';
-    showLegend?: boolean;
-    watermark?: string;
-    dpi?: number;
-    jpegQuality?: number;
-    oversample?: number;
-    marginPt?: number;
-    compression?: 'FAST' | 'MEDIUM' | 'SLOW';
-  } = {}
+    dpi = 240,
+    jpegQuality = 0.93,
+    oversample = 1.3,
+    marginPt = 0,
+    compression = 'SLOW',
+  }: AnyThemeOpts = {}
 ): Promise<Blob> {
-  // 1) Render a PNG en la resolución objetivo (para nitidez)
-  //    Si oversample > 1, dibujamos más grande para luego afinar.
-  const targetWpx = Math.round(width * oversample);
-  const targetHpx = Math.round(height * oversample);
+  const targetW = Math.round(width * oversample);
+  const targetH = Math.round(height * oversample);
 
-  const pngAtTarget = await posterToPng(data, {
-    width: targetWpx,
-    height: targetHpx,
-    theme,
+  const png = await posterToPng(data, {
+    width: targetW,
+    height: targetH,
+    theme: theme as ThemeName,
     showLegend,
     watermark,
   });
 
-  // 2) (Opcional) Downscale + JPEG para aligerar
-  const tmpImg = new Image();
-  tmpImg.crossOrigin = 'anonymous';
-  tmpImg.src = pngAtTarget;
-  await tmpImg.decode();
+  const tmp = new Image();
+  tmp.crossOrigin = 'anonymous';
+  tmp.src = png;
+  await tmp.decode();
 
-  const finalWpx = Math.round(targetWpx / oversample);
-  const finalHpx = Math.round(targetHpx / oversample);
+  const finalW = Math.round(targetW / oversample);
+  const finalH = Math.round(targetH / oversample);
 
   const c = document.createElement('canvas');
-  c.width = finalWpx;
-  c.height = finalHpx;
-  const ctx = c.getContext('2d')!;
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(tmpImg, 0, 0, finalWpx, finalHpx);
-  const outDataUrl = c.toDataURL('image/jpeg', jpegQuality);
+  c.width = finalW;
+  c.height = finalH;
+  const cctx = c.getContext('2d')!;
+  cctx.imageSmoothingEnabled = true;
+  cctx.imageSmoothingQuality = 'high';
+  cctx.drawImage(tmp, 0, 0, finalW, finalH);
+  const jpegDataUrl = c.toDataURL('image/jpeg', jpegQuality);
 
-  // 3) Página PDF que respete la proporción que pediste
-  //    Conversión: px → pt en función del dpi
-  const pageWpt = (finalWpx / dpi) * 72;
-  const pageHpt = (finalHpx / dpi) * 72;
+  const pageWpt = (finalW / dpi) * 72;
+  const pageHpt = (finalH / dpi) * 72;
   const orientation = pageWpt >= pageHpt ? 'landscape' : 'portrait';
 
   const { default: jsPDF } = await import('jspdf');
   const pdf = new jsPDF({
     orientation,
     unit: 'pt',
-    // formato EXACTO en puntos, acorde al width/height que pediste
     format: [pageWpt, pageHpt],
     compress: true,
     precision: 2,
   });
 
-  // 4) Colocar con margen opcional, SIN deformar
   const x = marginPt;
   const y = marginPt;
   const w = pageWpt - marginPt * 2;
   const h = pageHpt - marginPt * 2;
+  const ratio = finalW / finalH;
 
-  // Mantener proporción (por si alguien pone márgenes grandes)
-  const imgRatio = finalWpx / finalHpx;
   let drawW = w;
-  let drawH = drawW / imgRatio;
+  let drawH = drawW / ratio;
   if (drawH > h) {
     drawH = h;
-    drawW = drawH * imgRatio;
+    drawW = drawH * ratio;
   }
   const drawX = x + (w - drawW) / 2;
   const drawY = y + (h - drawH) / 2;
 
-  pdf.addImage(outDataUrl, 'JPEG', drawX, drawY, drawW, drawH, undefined, compression);
-
+  pdf.addImage(jpegDataUrl, 'JPEG', drawX, drawY, drawW, drawH, undefined, compression);
   return pdf.output('blob') as Blob;
 }
 
-// ================== Helpers descarga ==================
-
+/* ================== Helpers descarga ================== */
 export function downloadFile(dataUrl: string, filename: string) {
-  const link = document.createElement('a');
-  link.href = dataUrl;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 export function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }

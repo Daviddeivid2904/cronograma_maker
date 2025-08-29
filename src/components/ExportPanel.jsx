@@ -1,5 +1,5 @@
 // src/components/ExportPanel.jsx
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { posterToPng, posterToPdf, downloadFile, downloadBlob } from '../export/exportImage';
 import { buildScheduleDataFromState } from '../export/buildScheduleData';
 
@@ -23,39 +23,11 @@ function OptionCard({ label, selected, onClick, children }) {
 
 /* ===================== Previews con SVG (auto-contenidos) ===================== */
 
-// Colores representativos por tema (coinciden con tu idea de classic/light/pastel)
-function getThemePreviewColors(theme) {
-  if (theme === 'light') {
-    return {
-      headerBg: '#F3F4F6', headerText: '#111827',
-      grid: '#D1D5DB', border: '#9CA3AF',
-      block1: '#BFDBFE', block2: '#FDE68A', block3: '#E5E7EB'
-    };
-  }
-  if (theme === 'pastel') {
-    return {
-      headerBg: '#F8FAFC', headerText: '#0F172A',
-      grid: '#CBD5E1', border: '#94A3B8',
-      block1: '#FBCFE8', block2: '#BBF7D0', block3: '#BFDBFE'
-    };
-  }
-  // classic
-  return {
-    headerBg: '#FFFFFF', headerText: '#0F172A',
-    grid: '#000000', border: '#000000',
-    block1: '#FDE68A', block2: '#BFDBFE', block3: '#FECACA'
-  };
-}
-
-// Dibuja una mini “hoja” con cabecera y grilla; aspect: 'a4' | 'widescreen' | 'square'
-function MiniPosterSVG({ theme, aspect }) {
-  const { headerBg, headerText, grid, border, block1, block2, block3 } = getThemePreviewColors(theme);
-
-  // Tamaño base del SVG (solo para preview)
+function MiniFormatPreview({ aspect }) {
   const dims =
-    aspect === 'a4'        ? { w: 140, h: 198 } :
+    aspect === 'a4' ? { w: 140, h: 198 } :
     aspect === 'widescreen' ? { w: 168, h: 95 } :
-                              { w: 124, h: 124 };
+    { w: 124, h: 124 };
 
   const { w, h } = dims;
   const pad = 6;
@@ -65,24 +37,21 @@ function MiniPosterSVG({ theme, aspect }) {
   const gridY = pad + headerH;
   const gridW = w - pad * 2 - leftColW;
   const gridH = h - pad * 2 - headerH;
-
-  // líneas de división (3×4 aprox)
   const rows = 4, cols = 5;
+
+  const border = '#374151';
+  const grid = '#CBD5E1';
+  const headerBg = '#F3F4F6';
+  const block1 = '#FDE68A';
+  const block2 = '#93C5FD';
+  const block3 = '#FCA5A5';
 
   return (
     <svg width="100%" height="100%" viewBox={`0 0 ${w} ${h}`} xmlns="http://www.w3.org/2000/svg">
-      {/* fondo */}
       <rect x="0" y="0" width={w} height={h} fill="#ffffff" />
-
-      {/* borde */}
       <rect x={pad} y={pad} width={w - pad*2} height={h - pad*2} fill="#fff" stroke={border} strokeWidth="1.5" />
-
-      {/* cabecera de días */}
       <rect x={gridX} y={pad} width={gridW} height={headerH} fill={headerBg} stroke={border} strokeWidth="1" />
-      {/* columna de horas */}
       <rect x={pad} y={gridY} width={leftColW} height={gridH} fill="#fff" stroke={border} strokeWidth="1" />
-
-      {/* grilla */}
       <rect x={gridX} y={gridY} width={gridW} height={gridH} fill="#fff" stroke={border} strokeWidth="1" />
       {Array.from({length: cols-1}).map((_,i)=>(
         <line key={'v'+i}
@@ -96,15 +65,11 @@ function MiniPosterSVG({ theme, aspect }) {
           x2={gridX+gridW} y2={gridY + (gridH/rows)*(i+1)}
           stroke={grid} strokeWidth="0.8" />
       ))}
-
-      {/* bloques de ejemplo */}
       <rect x={gridX + 2} y={gridY + 2} width={gridW/cols - 4} height={gridH/rows - 4} rx="3" fill={block1} stroke={border} strokeWidth="0.8" />
       <rect x={gridX + (gridW/cols)*2 + 2} y={gridY + (gridH/rows) + 2} width={gridW/cols - 4} height={gridH/rows - 4} rx="3" fill={block2} stroke={border} strokeWidth="0.8" />
-      <rect x={gridX + (gridW/cols)*4 - (gridW/cols) + 2} y={gridY + (gridH/rows)*2 + 2} width={gridW/cols - 4} height={gridH/rows - 4} rx="3" fill={block3} stroke={border} strokeWidth="0.8" />
-
-      {/* título pequeñito para diferenciar aún más los temas (color de texto cambia) */}
+      <rect x={gridX + (gridW/cols)*3 + 2} y={gridY + (gridH/rows)*2 + 2} width={gridW/cols - 4} height={gridH/rows - 4} rx="3" fill={block3} stroke={border} strokeWidth="0.8" />
       <text x={w/2} y={pad + headerH/2} textAnchor="middle" dominantBaseline="central"
-        fontFamily="Inter, system-ui, Arial" fontSize="6.5" fill={headerText}>Demo</text>
+        fontFamily="Inter, system-ui, Arial" fontSize="6.5" fill="#111827">Demo</text>
     </svg>
   );
 }
@@ -113,8 +78,8 @@ function MiniPosterSVG({ theme, aspect }) {
 
 export default function ExportPanel({ activities, blocks, config, onClose }) {
   const [isExporting, setIsExporting] = useState(false);
-  const [exportFormat, setExportFormat] = useState('square'); // 'a4' | 'widescreen' | 'square'
-  const [theme, setTheme] = useState('classic');              // 'classic' | 'light' | 'pastel'
+  const [exportFormat, setExportFormat] = useState('square');
+  const [decoration, setDecoration] = useState('none');   // 'none' | 'snoopy' | 'medical' | 'science'
   const [showLegend, setShowLegend] = useState(false);
   const [title, setTitle] = useState('Mi Horario Semanal');
   const [subtitle, setSubtitle] = useState('Planificador de Actividades');
@@ -124,12 +89,6 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
     widescreen: { width: 2560, height: 1440, name: '16:9 (2560×1440)' },
     square:     { width: 2048, height: 2048, name: 'Cuadrado (2048×2048)' },
   };
-
-  const themes = [
-    { value: 'classic', name: 'Clásico' },
-    { value: 'light',   name: 'Claro'   },
-    { value: 'pastel',  name: 'Pastel'  },
-  ];
 
   async function doExport(kind) {
     if (isExporting) return;
@@ -143,7 +102,7 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
         const png = await posterToPng(data, {
           width: preset.width,
           height: preset.height,
-          theme,
+          theme: decoration,
           showLegend,
         });
         downloadFile(png, `horario-${exportFormat}.png`);
@@ -151,7 +110,7 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
         const pdf = await posterToPdf(data, {
           width: preset.width,
           height: preset.height,
-          theme,
+          theme: decoration,
           showLegend,
           dpi: 240,
           jpegQuality: 0.93,
@@ -167,6 +126,25 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
     }
   }
 
+  /* ====== Decoraciones en carrusel (una sola fila con flechas) ====== */
+  const scrollerRef = useRef(null);
+
+  const DECOR_OPTS = [
+    { value: 'none',    name: 'Sin dec.', icon: null },
+    { value: 'snoopy',  name: 'Snoopy',   icon: '/decors/snoopy/confetti.webp',scale: 1 }, // cambiá a .png si querés
+    { value: 'medical', name: 'Médico',   icon: '/decors/medicina/medico.png',scale: 1 },
+    { value: 'science', name: 'Científico', icon: '/decors/cientifico/atomo.png',scale: 1},
+    // { value: 'flowers', name: 'Flores', icon: '/decors/flores/flores.png' }, // ← por ahora deshabilitado
+  ];
+
+  const scrollByAmount = (dir) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const card = el.querySelector('[data-card]');
+    const step = card ? card.getBoundingClientRect().width + 12 : 180; // ancho tarjeta aprox
+    el.scrollBy({ left: dir * step, behavior: 'smooth' });
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -179,22 +157,14 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
           {/* Título / Subtítulo */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-            <input
-              value={title}
-              onChange={(e)=>setTitle(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2"
-            />
+            <input value={title} onChange={(e)=>setTitle(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Subtítulo</label>
-            <input
-              value={subtitle}
-              onChange={(e)=>setSubtitle(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2"
-            />
+            <input value={subtitle} onChange={(e)=>setSubtitle(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
           </div>
 
-          {/* Formato con previews (varía proporción, respeta tema actual) */}
+          {/* Formato (previews neutrales) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Formato</label>
             <div className="grid grid-cols-3 gap-2">
@@ -205,40 +175,79 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
                   selected={exportFormat === key}
                   onClick={() => setExportFormat(key)}
                 >
-                  <MiniPosterSVG theme={theme} aspect={key} />
+                  <MiniFormatPreview aspect={key} />
                 </OptionCard>
               ))}
             </div>
           </div>
 
-          {/* Tema con previews (varía colores, respeta el formato elegido) */}
+          {/* Decoración — carrusel horizontal */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tema</label>
-            <div className="grid grid-cols-3 gap-2">
-              {themes.map(t => (
-                <OptionCard
-                  key={t.value}
-                  label={t.name}
-                  selected={theme === t.value}
-                  onClick={() => setTheme(t.value)}
-                >
-                  <MiniPosterSVG theme={t.value} aspect={exportFormat} />
-                </OptionCard>
-              ))}
+            <label className="block text-sm font-medium text-gray-700 mb-2">Decoración</label>
+
+            <div className="relative">
+              {/* Flechas */}
+              <button
+                type="button"
+                aria-label="Anterior"
+                onClick={()=>scrollByAmount(-1)}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 border rounded-full w-7 h-7 grid place-items-center shadow-sm"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                aria-label="Siguiente"
+                onClick={()=>scrollByAmount(1)}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 border rounded-full w-7 h-7 grid place-items-center shadow-sm"
+              >
+                ›
+              </button>
+
+              {/* Pista scrolleable */}
+              <div
+                ref={scrollerRef}
+                className="flex gap-2 overflow-x-auto no-scrollbar px-8"
+                style={{ scrollSnapType: 'x proximity' }}
+              >
+                {DECOR_OPTS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    data-card
+                    onClick={() => setDecoration(opt.value)}
+                    className={`min-w-[7.5rem] max-w-[7.5rem] scroll-snap-align-start rounded-lg border p-2 flex-shrink-0 flex flex-col items-center ${
+                      decoration === opt.value ? 'border-blue-600 ring-2 ring-blue-400' : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="w-28 h-16 overflow-hidden rounded-sm flex items-start justify-center bg-white">
+                      {opt.icon ? (
+                        <img
+                          src={opt.icon}
+                          alt={opt.name}
+                          style={{ transform: `scale(${opt.scale || 1})` }}
+                          className="max-h-full max-w-full object-contain"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="text-[10px] text-gray-500">—</div>
+                      )}
+                    </div>
+                    <span className="mt-1 text-[11px] text-gray-800">{opt.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="text-[11px] text-gray-500 mt-1">
-              La preview es referencial; el archivo final usa tus actividades actuales.
+
+            <p className="text-[11px] text-gray-500 mt-2">
+              Desliza o usá las flechas para ver más opciones.
             </p>
           </div>
 
           {/* Leyenda */}
           <div className="flex items-center justify-between pt-2">
             <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={showLegend}
-                onChange={e=>setShowLegend(e.target.checked)}
-              />
+              <input type="checkbox" checked={showLegend} onChange={e=>setShowLegend(e.target.checked)} />
               <span className="text-sm">Mostrar leyenda</span>
             </label>
           </div>
