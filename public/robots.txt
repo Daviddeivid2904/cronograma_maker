@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://myweekly.online/sitemap.xml

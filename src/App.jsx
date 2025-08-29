@@ -153,10 +153,11 @@ return (
             <header className="flex items-center justify-between">
               {/* ⚠️ El script de AdSense ponelo en <head> del index.html, no acá */}
               <div>
-                <h1 className="text-2xl font-bold">Planificador semanal</h1>
-                <p className="text-gray-600">
-                  Grilla por celdas: arrastrá, estirá, personalizá y descargá.
-                </p>
+                <h1 className="text-2xl font-bold">Planificador semanal online gratis</h1>
+<p className="text-gray-600">
+  Organiza tu semana con una grilla interactiva: arrastrá, estirá, personalizá y descargá tu horario en PDF o PNG.
+</p>
+
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -166,6 +167,7 @@ return (
                   Descargar imagen
                 </button>
               </div>
+              
             </header>
 
             <ActivityPalette onAdd={handleAddActivity} />
@@ -210,6 +212,9 @@ return (
             </div>
 
             <footer className="text-center text-xs text-gray-500 pt-4">
+              <p>
+    MyWeekly es una herramienta gratuita para crear y exportar tu <strong>horario semanal</strong> de forma rápida y sencilla.
+  </p>
               <a
                 href="https://www.linkedin.com/in/david-lekerman/"
                 target="_blank"
