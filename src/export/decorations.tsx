@@ -173,24 +173,26 @@ function Medical({ grid, s, pad }: { grid: GridRect; s: number; pad: number }) {
   const rc = place(grid, "right-center");
   const lc = place(grid, "left-center");
 
+  const isWide = grid.w / grid.h > 1.35; 
+
   return (
     <>
       {/* doctor arriba-derecha, pegado a la grilla */}
       <image
         href={resolvePublic("/decors/medicina/medico.png")}
-        x={tr.x - mid + pad}
-        y={tr.y - 1.25* mid - pad}
-        width={mid}
-        height={mid}
+        x={isWide ?tr.x - 1.5*big + pad:tr.x - mid + pad}
+        y={isWide ? tr.y - 1.23* big - pad : tr.y - 1.25 * mid - pad}
+        width={isWide ? big:mid}
+        height={isWide?big:mid}
       />
 
       {/* corazón arriba-izquierda */}
       <image
         href={resolvePublic("/decors/medicina/corazon.png")}
-        x={tl.x - mid - pad}
-        y={tl.y - mid - pad}
-        width={mid}
-        height={mid}
+        x={isWide ?tl.x - big - pad:tl.x - mid - pad}
+        y={isWide ?tl.y - big - pad :tl.y - mid - pad}
+        width={isWide ? big:mid}
+        height={isWide?big:mid}
         transform={`rotate(-8 ${tl.x - mid / 2} ${tl.y + mid / 2})`}
       />
 
@@ -207,20 +209,20 @@ function Medical({ grid, s, pad }: { grid: GridRect; s: number; pad: number }) {
       {/* jeringa abajo-izquierda */}
       <image
         href={resolvePublic("/decors/medicina/inyeccion.png")}
-        x={bl.x - mid - pad}
-        y={bl.y + pad}
-        width={mid}
-        height={mid}
+        x={isWide? bl.x - 1.15*big - pad: bl.x - mid - pad}
+        y={isWide ?  bl.y + pad :bl.y + pad}
+        width={isWide ? big:mid}
+        height={isWide?big:mid}
         transform={`rotate(14 ${bl.x + pad + mid / 2} ${bl.y - pad - mid / 2})`}
       />
 
       {/* stetoscopio centro derecha */}
       <image
         href={resolvePublic("/decors/medicina/stetoscopio.png")}
-        x={rc.x - 0.8*mid}
-        y={rc.y - 2*mid}
-        width={mid}
-        height={mid}
+        x={isWide? rc.x - 0.5*big:rc.x - 0.8*mid}
+        y={isWide? rc.y - 2*big: rc.y - 2*mid}
+        width={isWide ? big:mid}
+        height={isWide?big:mid}
         transform={`rotate(14 ${bl.x + pad + mid / 2} ${bl.y - pad - mid / 2})`}
       />
     </>
@@ -239,37 +241,40 @@ function Science({ grid, s, pad }: { grid: GridRect; s: number; pad: number }) {
   const lc = place(grid, "left-center");
   const rc = place(grid, "right-center");
 
+    const isWide = grid.w / grid.h > 1.35; 
+
   return (
     <>
       <image href={resolvePublic("/decors/cientifico/atomo.png")}    
-      x={lc.x - 1.85* mid}
-      y={lc.y + mid}     
-      width={mid} 
-      height={mid} />
+      x={ isWide? lc.x - 1.85* big: lc.x - 1.85* mid}
+      y={ isWide? lc.y + 0.2*big: lc.y + mid}     
+      width={isWide ? big:mid}
+      height={isWide?big:mid} />
       <image href={resolvePublic("/decors/cientifico/bacteria.png")} 
       x={rc.x - 0.15*mid}
       y={rc.y - 2*mid}      
-      width={mid} height={mid} />
+      width={isWide ? big:mid}
+        height={isWide?big:mid} />
       <image href={resolvePublic("/decors/cientifico/cadena.png")}   
       x={br.x *0.96 - pad}
       y={br.y *0.96- pad} 
-      width={mid} 
-      height={mid} />
+      width={isWide ? big:mid}
+        height={isWide?big:mid} />
       <image href={resolvePublic("/decors/cientifico/micro.png")}    
-      x={tr.x - mid + pad}
-      y={tr.y - 1.25*mid - pad}  
-      width={mid} 
-      height={mid} />
+      x={isWide? tr.x - big + pad: tr.x - mid + pad}
+      y={isWide? tr.y - 1.23*big - pad: tr.y - 1.25* mid - pad}  
+      width={isWide ? big:mid}
+      height={isWide?big:mid} />
       <image href={resolvePublic("/decors/cientifico/lupa.png")}    
       x={bl.x - mid - pad}
       y={bl.y + pad}
-      width={mid} 
-      height={mid} />
+      width={isWide ? big:mid}
+        height={isWide?big:mid} />
       <image href={resolvePublic("/decors/cientifico/muestras.png")} 
-      x={tl.x - mid - pad}
-      y={tl.y - 1.2* mid - pad}
-      width={mid} 
-      height={mid} />
+      x={isWide? tl.x - mid - pad: tl.x - mid - pad}
+      y={isWide? tl.y - 1.2* big - pad: tl.y - 1.2* mid - pad}
+      width={isWide ? big:mid}
+        height={isWide?big:mid} />
     </>
   );
 }
@@ -287,38 +292,40 @@ function Snoopy({ grid, s, pad }: { grid: GridRect; s: number; pad: number }) {
   const rc = place(grid, "right-center");
   const lc = place(grid, "left-center");
 
+    const isWide = grid.w / grid.h > 1.35; 
+
   return (
     <>
       {/* snoopy principal pegado al borde inferior */}
       <image href={resolvePublic("/decors/snoopy/peek.png")} 
-        x={tr.x - mid + pad}
-        y={tr.y - 0.95 * mid - pad}
-        width={mid}
-        height={mid}
+        x={isWide?tr.x - 1.1*big + pad:tr.x - mid + pad}
+        y={isWide?tr.y - 0.93*big - pad:tr.y - 0.95 * mid - pad}
+        width={isWide ? big:mid}
+        height={isWide?big:mid}
       />
 
       {/* snoopy acostado arriba-derecha */}
       <image href={resolvePublic("/decors/snoopy/main.png")} 
-        x={tl.x - mid - pad}
-        y={tl.y - mid - pad}
-        width={mid}
-        height={mid}
+        x={isWide? tl.x - 0.96* big - pad: tl.x - mid - pad}
+        y={isWide ? tl.y - 1.7*mid - pad: tl.y - mid - pad}
+        width={isWide ? big:mid}
+        height={isWide?big:mid}
       />
 
       {/* snoopy asomado izquierda */}
       <image href={resolvePublic("/decors/snoopy/asomado.png")} 
-        x={lc.x - 1.77* mid}
-        y={lc.y + mid}
-        width={mid}
-        height={mid}
+        x={isWide?lc.x - 1.695* big:lc.x - 1.77* mid}
+        y={isWide?lc.y + 0.5*big:lc.y + mid}
+        width={isWide ? big:mid}
+        height={isWide?big:mid}
       />
 
       {/* snoopy apoyado derecha */}
       <image href={resolvePublic("/decors/snoopy/apoyado.png")} 
-        x={rc.x - 0.3* mid}
-        y={rc.y - mid}
-        width={mid}
-        height={mid}
+        x={isWide ?rc.x - 0.3* big:rc.x - 0.3* big}
+        y={isWide ?rc.y - big:rc.y - big}
+        width={isWide ? big:big}
+        height={isWide?big:big}
       />
 
       {/* woodstock derecha abajo */}
