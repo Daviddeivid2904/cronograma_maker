@@ -134,31 +134,37 @@ return (
       {/* En mobile: una sola columna. En desktop: 3 columnas con rails */}
       <div className="w-full lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1100px)_minmax(0,1fr)] lg:gap-4">
 
-        {/* IZQUIERDA: tira lateral (solo desktop) */}
-        <aside className="hidden lg:block sticky top-4 self-start">
-  <div
-    style={{ display: "block", width: "160px", height: "600px", margin: "0 auto" }}
-  >
+{/* IZQUIERDA: Slidebar con 2 anuncios 160x600 */}
+<aside className="hidden lg:block self-start">
+  <div className="mx-auto space-y-4" style={{ width: "160px" }}>
+    {/* Slidebar izquierdo TOP */}
+    <ins
+      className="adsbygoogle"
+      style={{ display: "inline-block", width: "160px", height: "600px" }}
+      data-ad-client="ca-pub-5238026837919071"
+      data-ad-slot="3734034674"
+    ></ins>
     <script
-      type="text/javascript"
       dangerouslySetInnerHTML={{
-        __html: `
-          atOptions = {
-            'key' : '4fffd51ac3cb5b1861c20158c8de51b0',
-            'format' : 'iframe',
-            'height' : 600,
-            'width' : 160,
-            'params' : {}
-          };
-        `,
+        __html: `(adsbygoogle = window.adsbygoogle || []).push({});`,
       }}
-    />
+    ></script>
+
+    {/* Slidebar izquierdo BOTTOM */}
+    <ins
+      className="adsbygoogle"
+      style={{ display: "inline-block", width: "160px", height: "600px" }}
+      data-ad-client="ca-pub-5238026837919071"
+      data-ad-slot="7362840807"  // ideal: crear otro slot distinto para este
+    ></ins>
     <script
-      type="text/javascript"
-      src="//www.highperformanceformat.com/4fffd51ac3cb5b1861c20158c8de51b0/invoke.js"
-    />
+      dangerouslySetInnerHTML={{
+        __html: `(adsbygoogle = window.adsbygoogle || []).push({});`,
+      }}
+    ></script>
   </div>
 </aside>
+
 
 
         {/* CENTRO: app completa */}
@@ -247,18 +253,38 @@ return (
             </footer>
           </div>
         </main>
+{/* DERECHA: Slidebar con 2 anuncios 160x600 */}
+<aside className="hidden lg:block self-start">
+  <div className="mx-auto space-y-4" style={{ width: "160px" }}>
+    {/* Slidebar derecho TOP */}
+    <ins
+      className="adsbygoogle"
+      style={{ display: "inline-block", width: "160px", height: "600px" }}
+      data-ad-client="ca-pub-5238026837919071"
+      data-ad-slot="1473900517"
+    ></ins>
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `(adsbygoogle = window.adsbygoogle || []).push({});`,
+      }}
+    ></script>
 
-        {/* DERECHA: tira lateral (solo desktop) */}
-        <aside className="hidden lg:block sticky top-4 self-start">
-          <ins
-            className="adsbygoogle"
-            style={{ display: "block", width: "160px", height: "600px", margin: "0 auto" }}
-            data-ad-client="ca-pub-5238026837919071"
-            data-ad-slot="1473900517"
-            data-ad-format="auto"
-            data-full-width-responsive="true"
-          />
-        </aside>
+    {/* Slidebar derecho BOTTOM */}
+    <ins
+      className="adsbygoogle"
+      style={{ display: "inline-block", width: "160px", height: "600px" }}
+      data-ad-client="ca-pub-5238026837919071"
+      data-ad-slot="4489249542"  // ideal: otro slot distinto
+    ></ins>
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `(adsbygoogle = window.adsbygoogle || []).push({});`,
+      }}
+    ></script>
+  </div>
+</aside>
+
+
 
       </div>
     </div>
