@@ -215,6 +215,11 @@ return (
               <p>
     MyWeekly es una herramienta gratuita para crear y exportar tu <strong>horario semanal</strong> de forma rápida y sencilla.
   </p>
+  <div className="text-sm text-gray-600">
+        <a href="/privacy" className="mx-2 hover:underline">Privacy</a>
+        <a href="/faq" className="mx-2 hover:underline">FAQ</a>
+        <a href="/terms" className="mx-2 hover:underline">Terms</a>
+      </div>
               <a
                 href="https://www.linkedin.com/in/david-lekerman/"
                 target="_blank"
