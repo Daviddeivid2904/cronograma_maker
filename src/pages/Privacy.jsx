@@ -60,7 +60,7 @@ export default function Privacy() {
 
         <Card title="Contacto">
           <p className="text-slate-700">
-            Si tenés dudas, escribinos a <a className="text-indigo-600 hover:underline" href="mailto:hello@myweekly.online">hello@myweekly.online</a>.
+            Si tenés dudas, escribinos a <a className="text-indigo-600 hover:underline" href="mailto:hello@myweekly.online">davidlekerman04@gmail.com</a>.
           </p>
         </Card>
       </div>
