@@ -136,15 +136,30 @@ return (
 
         {/* IZQUIERDA: tira lateral (solo desktop) */}
         <aside className="hidden lg:block sticky top-4 self-start">
-          <ins
-            className="adsbygoogle"
-            style={{ display: "block", width: "160px", height: "600px", margin: "0 auto" }}
-            data-ad-client="ca-pub-5238026837919071"
-            data-ad-slot="3734034674"
-            data-ad-format="auto"
-            data-full-width-responsive="true"
-          />
-        </aside>
+  <div
+    style={{ display: "block", width: "160px", height: "600px", margin: "0 auto" }}
+  >
+    <script
+      type="text/javascript"
+      dangerouslySetInnerHTML={{
+        __html: `
+          atOptions = {
+            'key' : '4fffd51ac3cb5b1861c20158c8de51b0',
+            'format' : 'iframe',
+            'height' : 600,
+            'width' : 160,
+            'params' : {}
+          };
+        `,
+      }}
+    />
+    <script
+      type="text/javascript"
+      src="//www.highperformanceformat.com/4fffd51ac3cb5b1861c20158c8de51b0/invoke.js"
+    />
+  </div>
+</aside>
+
 
         {/* CENTRO: app completa */}
         <main className="min-w-0 w-full">
@@ -234,16 +249,30 @@ return (
         </main>
 
         {/* DERECHA: tira lateral (solo desktop) */}
-        <aside className="hidden lg:block sticky top-4 self-start">
-          <ins
-            className="adsbygoogle"
-            style={{ display: "block", width: "160px", height: "600px", margin: "0 auto" }}
-            data-ad-client="ca-pub-5238026837919071"
-            data-ad-slot="1473900517"
-            data-ad-format="auto"
-            data-full-width-responsive="true"
-          />
-        </aside>
+<aside className="hidden lg:block sticky top-4 self-start">
+  <div
+    style={{ display: "block", width: "160px", height: "600px", margin: "0 auto" }}
+  >
+    <script
+      type="text/javascript"
+      dangerouslySetInnerHTML={{
+        __html: `
+          atOptions = {
+            'key' : '4fffd51ac3cb5b1861c20158c8de51b0',
+            'format' : 'iframe',
+            'height' : 600,
+            'width' : 160,
+            'params' : {}
+          };
+        `,
+      }}
+    />
+    <script
+      type="text/javascript"
+      src="//www.highperformanceformat.com/4fffd51ac3cb5b1861c20158c8de51b0/invoke.js"
+    />
+  </div>
+</aside>
 
       </div>
     </div>
