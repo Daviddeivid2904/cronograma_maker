@@ -125,7 +125,7 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
     <div id="activity-palette" className="bg-white rounded-lg border p-4 shadow-sm">
       <h2 id="palette-title" className="text-sm font-semibold mb-3">Crear actividad</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form id="palette-form" onSubmit={handleSubmit} className="space-y-3">
         <div>
           <input
             type="text"
@@ -182,7 +182,11 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
           </div>
         </div>
 
-        <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm hover:bg-blue-700">
+        <button
+          id="add-button"
+          type="submit"
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm hover:bg-blue-700"
+        >
           Agregar
         </button>
       </form>
