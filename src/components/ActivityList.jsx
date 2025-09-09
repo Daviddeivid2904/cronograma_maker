@@ -80,7 +80,7 @@ export default function ActivityList({ activities, onAddToGrid, onDelete }) {
   if (!activities.length) return null
 
   return (
-    <div className="space-y-2">
+    <div id="activity-list" className="activity-list space-y-2">
       <div className="flex items-center justify-between">
         <div className="text-xs text-gray-500">
           Arrastrá a la grilla o <span className="font-semibold">tocá</span> una tarjeta y luego una casilla.
@@ -97,7 +97,7 @@ export default function ActivityList({ activities, onAddToGrid, onDelete }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-        {activities.map(act => (
+        {activities.map((act, index) => (
           <ActivityCard
             key={act.id}
             activity={act}
@@ -105,6 +105,7 @@ export default function ActivityList({ activities, onAddToGrid, onDelete }) {
             onDelete={onDelete}
             armedId={armedId}
             onArm={arm}
+            id={`activity-item-${index}`}
           />
         ))}
       </div>

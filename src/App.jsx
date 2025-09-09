@@ -127,7 +127,7 @@ export default function App() {
   }
 
 return (
-  <div className="w-full">
+  <div id="app-container" className="w-full">
     {/* Contenedor responsive con padding lateral chico en mobile */}
     <div className="mx-auto w-full max-w-screen-2xl px-3 sm:px-4">
 
@@ -184,6 +184,7 @@ return (
                 <button
                   onClick={() => setShowExportPanel(true)}
                   className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                  id="click-descargar-imagen-header"
                 >
                   Descargar imagen
                 </button>
@@ -227,19 +228,20 @@ return (
               <button
                 onClick={() => setShowExportPanel(true)}
                 className="bg-indigo-600 text-white px-5 py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+                id="click-descargar-imagen-footer"
               >
                 Descargar imagen
               </button>
             </div>
 
-            <footer className="text-center text-xs text-gray-500 pt-4">
+            <footer id="footer" className="text-center text-xs text-gray-500 pt-4">
               <p>
     MyWeekly es una herramienta gratuita para crear y exportar tu <strong>horario semanal</strong> de forma rápida y sencilla.
   </p>
-  <div className="text-sm text-gray-600">
-        <a href="/privacy" className="mx-2 hover:underline">Privacy</a>
-        <a href="/faq" className="mx-2 hover:underline">FAQ</a>
-        <a href="/terms" className="mx-2 hover:underline">Terms</a>
+  <div id="footer-links" className="text-sm text-gray-600">
+        <a id="click-privacy" href="/privacy" className="mx-2 hover:underline">Privacy</a>
+        <a id="click-faq" href="/faq" className="mx-2 hover:underline">FAQ</a>
+        <a id="click-terms" href="/terms" className="mx-2 hover:underline">Terms</a>
       </div>
               <a
                 href="https://www.linkedin.com/in/david-lekerman/"

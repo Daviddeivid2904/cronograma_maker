@@ -122,8 +122,8 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
   }
 
   return (
-    <div className="bg-white rounded-lg border p-4 shadow-sm">
-      <h2 className="text-sm font-semibold mb-3">Crear actividad</h2>
+    <div id="activity-palette" className="bg-white rounded-lg border p-4 shadow-sm">
+      <h2 id="palette-title" className="text-sm font-semibold mb-3">Crear actividad</h2>
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
@@ -191,8 +191,8 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
         <div className="mt-4 pt-3 border-t">
           <h3 className="text-xs font-medium text-gray-600 mb-2">Actividades:</h3>
           <div className="space-y-2">
-            {activities.map((activity) => (
-              <ActivityBlock key={activity.id} activity={activity} />
+            {activities.map((activity, index) => (
+              <ActivityBlock key={activity.id} activity={activity} id={`activity-block-${index}`} />
             ))}
           </div>
         </div>

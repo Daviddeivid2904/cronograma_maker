@@ -83,12 +83,14 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
     <>
       <div
         ref={setNodeRef}
+        id={`block-${block.id}`}
         className="shadow-sm text-xs px-2 py-1 select-none relative"
         style={style}
       >
         {/* Área central: activa drag y además selecciona/arma teletransporte con TAP */}
         <div
           ref={setActivatorNodeRef}
+          id={`block-activator-${block.id}`}
           className="absolute inset-x-0 top-2 bottom-2 cursor-grab active:cursor-grabbing"
           {...attributes}
           {...listeners}
@@ -113,6 +115,7 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
           className="absolute top-0.5 left-0.5 w-5 h-5 grid place-items-center rounded-full bg-black/30 hover:bg-black/50 text-white text-[10px] z-[3]"
           title="Editar subtítulo"
           aria-label="Editar subtítulo"
+          id={`block-edit-subtitle-${block.id}`}
         >
           ✏️
         </button>
@@ -124,12 +127,14 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
           className="absolute top-0.5 right-0.5 w-5 h-5 grid place-items-center rounded-full bg-black/30 hover:bg-black/50 text-white text-[11px] z-[3]"
           title="Borrar este bloque"
           aria-label="Borrar bloque"
+          id={`block-delete-${block.id}`}
         >
           ×
         </button>
 
         {/* Handle superior (resize arriba) - Separado del drag */}
         <div
+          id={`block-resize-top-${block.id}`}
           className="absolute top-0 left-0 right-0 h-3 cursor-ns-resize z-[4] touch-none"
           onMouseDown={(e) => handleResizeStart(e, 'top')}
           onTouchStart={(e) => handleResizeStart(e, 'top')}
@@ -144,6 +149,7 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
 
         {/* Handle inferior (resize abajo) - Separado del drag */}
         <div
+          id={`block-resize-bottom-${block.id}`}
           className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize z-[4] touch-none"
           onMouseDown={(e) => handleResizeStart(e, 'bottom')}
           onTouchStart={(e) => handleResizeStart(e, 'bottom')}
@@ -176,18 +182,21 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
               onChange={(e) => setSubtitle(e.target.value)}
               placeholder="Ej: Teórica - Prof. García"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+              id={`subtitle-input-${block.id}`}
             />
             
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowEditModal(false)}
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                id={`cancel-edit-subtitle-${block.id}`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSaveSubtitle}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                id={`save-edit-subtitle-${block.id}`}
               >
                 Guardar
               </button>

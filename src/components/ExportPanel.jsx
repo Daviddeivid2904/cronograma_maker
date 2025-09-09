@@ -149,7 +149,7 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Exportar horario</h2>
+          <h2 id="export-title" className="text-xl font-bold">Exportar horario</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Cerrar">✕</button>
         </div>
 
@@ -255,6 +255,7 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
           {/* Botones */}
           <div className="flex gap-2 pt-4">
             <button
+              id="export-image-button"
               onClick={()=>doExport('png')}
               disabled={isExporting}
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50"
@@ -262,6 +263,7 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
               {isExporting ? 'Exportando…' : 'Descargar PNG'}
             </button>
             <button
+              id="export-pdf-button"
               onClick={()=>doExport('pdf')}
               disabled={isExporting}
               className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 disabled:opacity-50"
