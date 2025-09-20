@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Idiomas: es,en,it,fr,de,pt,zh-CN,hi,ar,ru,ja,ko,nl,pl,tr,vi,id,no,fi,sv,da,cs -->
+  <!-- lastmod fijo según tu ejemplo anterior -->
+  
   <!-- HOME -->
   <url>
     <loc>https://myweekly.online/es</loc>
@@ -11,7 +14,7 @@
     <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr"/>
     <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://myweekly.online/zh"/>
     <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi"/>
     <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar"/>
     <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru"/>
@@ -40,7 +43,7 @@
     <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr/privacy"/>
     <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de/privacy"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt/privacy"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh/privacy"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://myweekly.online/zh/privacy"/>
     <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi/privacy"/>
     <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar/privacy"/>
     <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru/privacy"/>
@@ -69,7 +72,7 @@
     <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr/terms"/>
     <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de/terms"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt/terms"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh/terms"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://myweekly.online/zh/terms"/>
     <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi/terms"/>
     <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar/terms"/>
     <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru/terms"/>
@@ -98,7 +101,7 @@
     <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr/faq"/>
     <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de/faq"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt/faq"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh/faq"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://myweekly.online/zh/faq"/>
     <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi/faq"/>
     <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar/faq"/>
     <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru/faq"/>
@@ -127,7 +130,7 @@
     <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr/history"/>
     <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de/history"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt/history"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh/history"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://myweekly.online/zh/history"/>
     <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi/history"/>
     <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar/history"/>
     <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru/history"/>
@@ -148,30 +151,30 @@
 
   <!-- HOW TO USE -->
   <url>
-    <loc>https://myweekly.online/es/howtouse</loc>
+    <loc>https://myweekly.online/es/how-to-use</loc>
     <lastmod>2025-09-18</lastmod>
-    <xhtml:link rel="alternate" hreflang="es" href="https://myweekly.online/es/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://myweekly.online/en/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="it" href="https://myweekly.online/it/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://myweekly.online/ja/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://myweekly.online/ko/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="nl" href="https://myweekly.online/nl/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="pl" href="https://myweekly.online/pl/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="tr" href="https://myweekly.online/tr/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="vi" href="https://myweekly.online/vi/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="id" href="https://myweekly.online/id/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="no" href="https://myweekly.online/no/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="fi" href="https://myweekly.online/fi/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="sv" href="https://myweekly.online/sv/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="da" href="https://myweekly.online/da/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="cs" href="https://myweekly.online/cs/howtouse"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://myweekly.online/en/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://myweekly.online/es/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://myweekly.online/en/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://myweekly.online/it/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://myweekly.online/zh/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://myweekly.online/ja/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://myweekly.online/ko/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://myweekly.online/nl/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://myweekly.online/pl/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://myweekly.online/tr/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://myweekly.online/vi/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://myweekly.online/id/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="no" href="https://myweekly.online/no/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="fi" href="https://myweekly.online/fi/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="sv" href="https://myweekly.online/sv/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="da" href="https://myweekly.online/da/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://myweekly.online/cs/how-to-use"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://myweekly.online/en/how-to-use"/>
   </url>
 </urlset>
