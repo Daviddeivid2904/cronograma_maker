@@ -1,5 +1,6 @@
 // src/components/SettingsBar.jsx
 import React, { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { DAYS } from '../lib/time.js'
 import { clearAllStorage } from '../lib/storage.js'
 
@@ -10,6 +11,7 @@ import { clearAllStorage } from '../lib/storage.js'
  * }
  */
 export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
+  const { t } = useTranslation();
   const [startDay, setStartDay]       = useState(value.startDay)
   const [endDay, setEndDay]           = useState(value.endDay ?? 'Viernes')
   const [start, setStart]             = useState(value.start)
@@ -24,6 +26,15 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
 
   // Fin no puede ser igual al inicio
   const endOptions = useMemo(() => DAYS.filter(d => d !== startDay), [startDay])
+  const dayNameToKey = {
+    'Lunes': 'mon',
+    'Martes': 'tue',
+    'Miércoles': 'wed',
+    'Jueves': 'thu',
+    'Viernes': 'fri',
+    'Sábado': 'sat',
+    'Domingo': 'sun',
+  };
 
   useEffect(() => {
     if (endDay === startDay) {
@@ -46,27 +57,27 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
       {/* Configuración principal */}
       <div className="rounded-xl border bg-white p-3 grid grid-cols-1 md:grid-cols-5 gap-3">
         <div>
-          <label id="start-day-label" className="block text-xs text-gray-500 mb-1">Día de inicio</label>
+          <label id="start-day-label" className="block text-xs text-gray-500 mb-1">{t('settings.startDay')}</label>
           <select id="start-day-select" className="w-full border rounded-lg px-2 py-3 sm:py-2" value={startDay} onChange={e=>setStartDay(e.target.value)}>
-            {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
+            {DAYS.map(d => <option key={d} value={d}>{t(`days.${dayNameToKey[d]}`) || d}</option>)}
           </select>
         </div>
         <div>
-          <label id="end-day-label" className="block text-xs text-gray-500 mb-1">Día de fin</label>
+          <label id="end-day-label" className="block text-xs text-gray-500 mb-1">{t('settings.endDay')}</label>
           <select id="end-day-select" className="w-full border rounded-lg px-2 py-3 sm:py-2" value={endDay} onChange={e=>setEndDay(e.target.value)}>
-            {endOptions.map(d => <option key={d} value={d}>{d}</option>)}
+            {endOptions.map(d => <option key={d} value={d}>{t(`days.${dayNameToKey[d]}`) || d}</option>)}
           </select>
         </div>
         <div>
-          <label id="start-time-label" className="block text-xs text-gray-500 mb-1">Desde</label>
+          <label id="start-time-label" className="block text-xs text-gray-500 mb-1">{t('settings.from')}</label>
           <input id="start-time-input" type="time" className="w-full border rounded-lg px-2 py-3 sm:py-2" value={start} onChange={e=>setStart(e.target.value)} />
         </div>
         <div>
-          <label id="end-time-label" className="block text-xs text-gray-500 mb-1">Hasta</label>
+          <label id="end-time-label" className="block text-xs text-gray-500 mb-1">{t('settings.to')}</label>
           <input id="end-time-input" type="time" className="w-full border rounded-lg px-2 py-3 sm:py-2" value={end} onChange={e=>setEnd(e.target.value)} />
         </div>
         <div>
-          <label id="step-min-label" className="block text-xs text-gray-500 mb-1">Paso (min)</label>
+          <label id="step-min-label" className="block text-xs text-gray-500 mb-1">{t('settings.step')}</label>
           <select
             id="step-min-select"
             className="w-full border rounded-lg px-2 py-3 sm:py-2"
@@ -86,7 +97,7 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
           onClick={() => setShowAdvanced(!showAdvanced)}
           className="text-sm text-gray-600 hover:text-gray-800 px-4 py-2 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all"
         >
-          {showAdvanced ? 'Ocultar funciones avanzadas' : 'Más funciones'}
+          {showAdvanced ? t('settings.hideAdvanced') : t('settings.more')}
         </button>
       </div>
 
@@ -95,7 +106,7 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Sección de almuerzo */}
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3 border-b pb-2">Configuración de almuerzo</h4>
+              <h4 className="text-sm font-medium text-gray-700 mb-3 border-b pb-2">{t('settings.lunch.title')}</h4>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <input 
@@ -104,13 +115,13 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
                     checked={lunchEnabled} 
                     onChange={e => setLunchEnabled(e.target.checked)} 
                   />
-                  <label htmlFor="lunchEnabled" className="text-sm">Mostrar franja de almuerzo</label>
+                  <label htmlFor="lunchEnabled" className="text-sm">{t('settings.lunch.show')}</label>
                 </div>
 
                 {lunchEnabled && (
                   <>
                     <div>
-                      <label id="lunch-start-label" className="block text-xs text-gray-500 mb-1">Inicio del almuerzo</label>
+                      <label id="lunch-start-label" className="block text-xs text-gray-500 mb-1">{t('settings.lunch.start')}</label>
                       <input 
                         id="lunch-start-input"
                         type="time" 
@@ -121,7 +132,7 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
                     </div>
 
                     <div>
-                      <label id="lunch-end-label" className="block text-xs text-gray-500 mb-1">Fin del almuerzo</label>
+                      <label id="lunch-end-label" className="block text-xs text-gray-500 mb-1">{t('settings.lunch.end')}</label>
                       <input 
                         id="lunch-end-input"
                         type="time" 
@@ -132,7 +143,7 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
                     </div>
 
                     <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-                      Se mostrará una franja en la grilla entre {lunchStart} y {lunchEnd}
+                    {t('settings.lunch.desc')} {lunchStart} and {lunchEnd}
                     </div>
                   </>
                 )}
@@ -141,15 +152,15 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
 
             {/* Sección de almacenamiento */}
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3 border-b pb-2">Almacenamiento</h4>
+              <h4 className="text-sm font-medium text-gray-700 mb-3 border-b pb-2">{t('settings.storage.title')}</h4>
               <div className="space-y-3">
                 <div className="text-xs text-gray-600 bg-blue-50 p-3 rounded border border-blue-200">
-                  <p className="font-medium mb-1">💾 Guardado automático activado</p>
-                  <p>Tu horario se guarda automáticamente en el navegador. Los datos incluyen:</p>
+                  <p className="font-medium mb-1">💾 {t('settings.storage.autoSave')}</p>
+                  <p>{t('settings.storage.autoSaveDesc')}</p>
                   <ul className="list-disc list-inside mt-1 ml-2">
-                    <li>Actividades creadas</li>
-                    <li>Tarjetas en la grilla con posiciones exactas</li>
-                    <li>Configuración de días y horarios</li>
+                    <li>{t('settings.storage.items.activities')}</li>
+                    <li>{t('settings.storage.items.blocks')}</li>
+                    <li>{t('settings.storage.items.config')}</li>
                   </ul>
                 </div>
                 
@@ -163,7 +174,7 @@ export default function SettingsBar({ value, onChange, onCreateBreakCard }) {
                   }}
                   className="w-full bg-red-600 text-white py-2 px-4 rounded-lg text-sm hover:bg-red-700 transition-colors"
                 >
-                  🗑️ Borrar todos los datos guardados
+                  🗑️ {t('settings.storage.reset')}
                 </button>
               </div>
             </div>

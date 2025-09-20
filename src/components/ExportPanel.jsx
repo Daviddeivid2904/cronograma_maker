@@ -1,5 +1,6 @@
 // src/components/ExportPanel.jsx
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { posterToPng, posterToPdf, downloadFile, downloadBlob } from '../export/exportImage';
 import { buildScheduleDataFromState } from '../export/buildScheduleData';
 
@@ -77,12 +78,19 @@ function MiniFormatPreview({ aspect }) {
 /* ===================== Panel principal ===================== */
 
 export default function ExportPanel({ activities, blocks, config, onClose }) {
+  const { t, i18n } = useTranslation();
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState('square');
   const [decoration, setDecoration] = useState('none');   // 'none' | 'snoopy' | 'medical' | 'science'
   const [showLegend, setShowLegend] = useState(false);
-  const [title, setTitle] = useState('Mi Horario Semanal');
-  const [subtitle, setSubtitle] = useState('Planificador de Actividades');
+  const [title, setTitle] = useState('');
+  const [subtitle, setSubtitle] = useState('');
+
+  useEffect(() => {
+    setTitle(t('export.defaults.title'));
+    setSubtitle(t('export.defaults.subtitle'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.resolvedLanguage]);
 
   const formatPresets = {
     a4:         { width: 2480, height: 3508, name: 'A4 (2480×3508)' },
@@ -130,11 +138,10 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
   const scrollerRef = useRef(null);
 
   const DECOR_OPTS = [
-    { value: 'none',    name: 'Sin dec.', icon: null },
-    { value: 'snoopy',  name: 'Snoopy',   icon: '/decors/snoopy/confetti.webp',scale: 1 }, // cambiá a .png si querés
-    { value: 'medical', name: 'Médico',   icon: '/decors/medicina/medico.png',scale: 1 },
-    { value: 'science', name: 'Científico', icon: '/decors/cientifico/atomo.png',scale: 1},
-    // { value: 'flowers', name: 'Flores', icon: '/decors/flores/flores.png' }, // ← por ahora deshabilitado
+    { value: 'none',    nameKey: 'export.decor.none',    icon: null },
+    { value: 'snoopy',  nameKey: 'export.decor.snoopy',  icon: '/decors/snoopy/confetti.webp',scale: 1 },
+    { value: 'medical', nameKey: 'export.decor.medical', icon: '/decors/medicina/medico.png',scale: 1 },
+    { value: 'science', nameKey: 'export.decor.science', icon: '/decors/cientifico/atomo.png',scale: 1},
   ];
 
   const scrollByAmount = (dir) => {
@@ -149,24 +156,24 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h2 id="export-title" className="text-xl font-bold">Exportar horario</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Cerrar">✕</button>
+          <h2 id="export-title" className="text-xl font-bold">{t('export.title')}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label={t('export.close')}>✕</button>
         </div>
 
         <div className="space-y-4">
           {/* Título / Subtítulo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-            <input value={title} onChange={(e)=>setTitle(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('export.form.title')}</label>
+            <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder={t('export.form.titlePh')} className="w-full border rounded-lg px-3 py-2" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Subtítulo</label>
-            <input value={subtitle} onChange={(e)=>setSubtitle(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('export.form.subtitle')}</label>
+            <input value={subtitle} onChange={(e)=>setSubtitle(e.target.value)} placeholder={t('export.form.subtitlePh')} className="w-full border rounded-lg px-3 py-2" />
           </div>
 
           {/* Formato (previews neutrales) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Formato</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('export.form.format')}</label>
             <div className="grid grid-cols-3 gap-2">
               {Object.entries(formatPresets).map(([key, preset]) => (
                 <OptionCard
@@ -183,7 +190,7 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
 
           {/* Decoración — carrusel horizontal */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Decoración</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('export.form.decoration')}</label>
 
             <div className="relative">
               {/* Flechas */}
@@ -224,7 +231,7 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
                       {opt.icon ? (
                         <img
                           src={opt.icon}
-                          alt={opt.name}
+                          alt={t(opt.nameKey)}
                           style={{ transform: `scale(${opt.scale || 1})` }}
                           className="max-h-full max-w-full object-contain"
                           loading="lazy"
@@ -233,22 +240,20 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
                         <div className="text-[10px] text-gray-500">—</div>
                       )}
                     </div>
-                    <span className="mt-1 text-[11px] text-gray-800">{opt.name}</span>
+                    <span className="mt-1 text-[11px] text-gray-800">{t(opt.nameKey)}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <p className="text-[11px] text-gray-500 mt-2">
-              Desliza o usá las flechas para ver más opciones.
-            </p>
+            <p className="text-[11px] text-gray-500 mt-2">{t('export.hint.scroll')}</p>
           </div>
 
           {/* Leyenda */}
           <div className="flex items-center justify-between pt-2">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={showLegend} onChange={e=>setShowLegend(e.target.checked)} />
-              <span className="text-sm">Mostrar leyenda</span>
+              <span className="text-sm">{t('export.form.legend')}</span>
             </label>
           </div>
 
@@ -260,7 +265,7 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
               disabled={isExporting}
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              {isExporting ? 'Exportando…' : 'Descargar PNG'}
+              {isExporting ? t('export.btn.loading') : t('export.btn.png')}
             </button>
             <button
               id="export-pdf-button"
@@ -268,7 +273,7 @@ export default function ExportPanel({ activities, blocks, config, onClose }) {
               disabled={isExporting}
               className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 disabled:opacity-50"
             >
-              {isExporting ? 'Exportando…' : 'Descargar PDF'}
+              {isExporting ? t('export.btn.loading') : t('export.btn.pdf')}
             </button>
           </div>
         </div>

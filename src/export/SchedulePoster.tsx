@@ -80,6 +80,7 @@ export default function SchedulePoster({
 }: PosterProps) {
   const colors = getThemeColors(theme);
 
+  // Use translated day names from data.days if available, otherwise fallback to Spanish
   const days = data.days ?? ["Lunes","Martes","Miércoles","Jueves","Viernes"];
   const items = data.items ?? [];
 

@@ -1,5 +1,6 @@
 import React from "react";
 import PageShell, { Card } from "./PageShell";
+import { useTranslation } from 'react-i18next';
 
 const QA = ({ q, a }) => (
   <details className="rounded-lg border border-slate-200 bg-white p-4 open:bg-slate-50">
@@ -11,39 +12,36 @@ const QA = ({ q, a }) => (
 );
 
 export default function FAQ() {
+  const { t } = useTranslation();
   return (
     <PageShell
-      title="Preguntas Frecuentes"
-      description="Respuestas rápidas sobre cómo usar MyWeekly."
+      title={t('pages.faq.title')}
+      description={t('pages.faq.description')}
     >
       <div className="grid gap-4">
         <Card>
           <div className="grid gap-3">
             <QA
-              q="¿Dónde se guardan mis horarios?"
-              a="En tu propio navegador (localStorage). No subimos tus horarios a servidores."
+              q={t('faq.q1')}
+              a={t('faq.a1')}
             />
             <QA
-              q="¿Puedo exportar en PDF o PNG?"
-              a="Sí. Abrí el panel de exportación y elegí el formato y tamaño que prefieras."
+              q={t('faq.q2')}
+              a={t('faq.a2')}
             />
             <QA
-              q="¿Cómo muevo las decoraciones/sellos?"
-              a="En la exportación, elige el tema; las imágenes se anclan automáticamente a las esquinas/límites de la grilla según el formato."
+              q={t('faq.q3')}
+              a={t('faq.a3')}
             />
             <QA
-              q="¿Es gratis?"
-              a="Sí, MyWeekly es gratuito. Podemos mostrar anuncios para sostener el servicio."
+              q={t('faq.q4')}
+              a={t('faq.a4')}
             />
             <QA
-              q="Me gustaría sugerir una mejora"
+              q={t('faq.q5')}
               a={
                 <>
-                  Escribinos a{" "}
-                  <a className="text-indigo-600 hover:underline" href="mailto:hello@myweekly.online">
-                    davidlekerman04@gmail.com
-                  </a>{" "}
-                  con tu idea. ¡Gracias!
+                  {t('faq.a5')} {" "}
                 </>
               }
             />

@@ -1,10 +1,12 @@
 // src/components/ActivityList.jsx
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import clsx from 'clsx'
 
 function ActivityCard({ activity, onAddToGrid, onDelete, armedId, onArm }) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `activity-${activity.id}`,
     data: { type: 'activity', activity }
@@ -26,7 +28,7 @@ function ActivityCard({ activity, onAddToGrid, onDelete, armedId, onArm }) {
       style={{ transform: CSS.Translate.toString(transform), borderColor: activity.color }}
       // TAP para "armar" modo colocar (mobile-friendly)
       onClick={(e) => { e.stopPropagation(); onArm(activity) }}
-      title="Tocar para colocar en una casilla (o arrastrar)"
+      title={t('list.tapToPlace')}
     >
       <div className="flex items-center gap-3">
         <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: activity.color }} />
@@ -37,17 +39,17 @@ function ActivityCard({ activity, onAddToGrid, onDelete, armedId, onArm }) {
         <button
           onClick={(e) => { e.stopPropagation(); onAddToGrid(activity) }}
           className="text-xs rounded-lg bg-indigo-600 text-white px-3 py-1 hover:bg-indigo-700"
-          title="Añadir a grilla"
+          title={t('list.addToGrid')}
         >
-          Añadir
+          {t('list.add')}
         </button>
 
         {/* Cruz para borrar */}
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(activity.id) }}
           className="w-6 h-6 grid place-items-center rounded-full border text-gray-500 hover:text-red-600 hover:border-red-500"
-          title="Borrar tarjeta y sus bloques"
-          aria-label="Borrar"
+          title={t('list.deleteCard')}
+          aria-label={t('list.delete')}
         >
           ×
         </button>
@@ -57,6 +59,7 @@ function ActivityCard({ activity, onAddToGrid, onDelete, armedId, onArm }) {
 }
 
 export default function ActivityList({ activities, onAddToGrid, onDelete }) {
+  const { t } = useTranslation();
   const [armedId, setArmedId] = useState(null)
 
   // Cuando WeekGrid termina de colocar, desarmamos
@@ -83,15 +86,15 @@ export default function ActivityList({ activities, onAddToGrid, onDelete }) {
     <div id="activity-list" className="activity-list space-y-2">
       <div className="flex items-center justify-between">
         <div className="text-xs text-gray-500">
-          Arrastrá a la grilla o <span className="font-semibold">tocá</span> una tarjeta y luego una casilla.
+          {t('list.hint')}
         </div>
         {armedId && (
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('cancel-place-activity'))}
             className="text-xs rounded-lg border px-2 py-1 hover:bg-gray-50"
-            title="Salir del modo colocar"
+            title={t('list.exitPlaceMode')}
           >
-            Cancelar
+            {t('common.cancel')}
           </button>
         )}
       </div>

@@ -1,5 +1,6 @@
 // src/components/Block.jsx
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -15,6 +16,7 @@ import { CSS } from '@dnd-kit/utilities'
  * - onUpdateSubtitle(id, subtitle) // << NUEVO: actualizar subtítulo
  */
 export default function Block({ block, isResizing, isSelected, onResizeStart, onSelect, onDelete, onArmMove, onUpdateSubtitle }) {
+  const { t } = useTranslation();
   const [showEditModal, setShowEditModal] = useState(false)
   const [subtitle, setSubtitle] = useState(block.subtitle || '')
 
@@ -96,7 +98,7 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
           {...listeners}
           onMouseDown={(e) => { e.stopPropagation(); onSelect?.(block.id) }}
           onClick={(e) => { e.stopPropagation(); onArmMove?.(block.id) }}   // << TAP para "teletransportar"
-          title="Tocar para mover a otra casilla; arrastrar para reubicar"
+          title={t('block.tapToMove')}
         />
 
         {/* Contenido visual */}
@@ -113,8 +115,8 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
           type="button"
           onClick={(e) => { e.stopPropagation(); setShowEditModal(true) }}
           className="absolute top-0.5 left-0.5 w-5 h-5 grid place-items-center rounded-full bg-black/30 hover:bg-black/50 text-white text-[10px] z-[3]"
-          title="Editar subtítulo"
-          aria-label="Editar subtítulo"
+          title={t('block.editSubtitle')}
+          aria-label={t('block.editSubtitle')}
           id={`block-edit-subtitle-${block.id}`}
         >
           ✏️
@@ -125,8 +127,8 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
           type="button"
           onClick={(e) => { e.stopPropagation(); onDelete?.(block.id) }}
           className="absolute top-0.5 right-0.5 w-5 h-5 grid place-items-center rounded-full bg-black/30 hover:bg-black/50 text-white text-[11px] z-[3]"
-          title="Borrar este bloque"
-          aria-label="Borrar bloque"
+          title={t('block.deleteThis')}
+          aria-label={t('block.delete')}
           id={`block-delete-${block.id}`}
         >
           ×
@@ -144,7 +146,7 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
             borderTopRightRadius: 8,
             pointerEvents: 'auto'
           }}
-          title="Estirar hacia arriba"
+          title={t('block.resizeUp')}
         />
 
         {/* Handle inferior (resize abajo) - Separado del drag */}
@@ -159,7 +161,7 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
             borderBottomRightRadius: 8,
             pointerEvents: 'auto'
           }}
-          title="Estirar hacia abajo"
+          title={t('block.resizeDown')}
         />
 
         {/* Indicadores visuales para móvil */}
@@ -171,16 +173,14 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-4 w-full max-w-sm">
-            <h3 className="text-lg font-semibold mb-3">Editar subtítulo</h3>
-            <p className="text-sm text-gray-600 mb-3">
-              Agrega información adicional como "Teórica", "Práctica", profesor, etc.
-            </p>
+            <h3 className="text-lg font-semibold mb-3">{t('block.modal.title')}</h3>
+            <p className="text-sm text-gray-600 mb-3">{t('block.modal.desc')}</p>
             
             <input
               type="text"
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
-              placeholder="Ej: Teórica - Prof. García"
+              placeholder={t('block.subtitlePlaceholder')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
               id={`subtitle-input-${block.id}`}
             />
@@ -191,14 +191,14 @@ export default function Block({ block, isResizing, isSelected, onResizeStart, on
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                 id={`cancel-edit-subtitle-${block.id}`}
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleSaveSubtitle}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 id={`save-edit-subtitle-${block.id}`}
               >
-                Guardar
+                {t('common.save')}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 // src/components/WeekGrid.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   DndContext,
   useDroppable,
@@ -35,29 +36,31 @@ function DraggableBlock({
   start,                 // << NUEVO: hora de inicio del día
   isMobile,              // << NUEVO: si estamos en móvil
 }) {
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [subtitle, setSubtitle] = useState(block.subtitle || '')
-  const [title, setTitle] = useState(block.name || '')
-  
+  const { t } = useTranslation();
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [subtitle, setSubtitle] = useState(block.subtitle || '');
+  const [title, setTitle] = useState(block.name || '');
+
   // Extraer horas actuales del timeLabel
-  const timeMatch = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/)
+  const timeMatch = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/);
   const [startTime, setStartTime] = useState(() => {
-    const match = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/)
-    return match ? match[1] : '09:00'
-  })
+    const match = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/);
+    return match ? match[1] : '09:00';
+  });
   const [endTime, setEndTime] = useState(() => {
-    const match = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/)
-    return match ? match[2] : '10:00'
-  })
+    const match = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/);
+    return match ? match[2] : '10:00';
+  });
 
   // Sincronizar el estado local del modal cuando cambian las props del bloque
   useEffect(() => {
-    setSubtitle(block.subtitle || '')
-    setTitle(block.name || '')
-    const match = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/)
+    setSubtitle(block.subtitle || '');
+    setTitle(block.name || '');
+    const match = block.timeLabel.match(/(\d{2}:\d{2})–(\d{2}:\d{2})/);
     if (match) {
-      setStartTime(match[1])
-      setEndTime(match[2])
+      setStartTime(match[1]);
+      setEndTime(match[2]);
     }
   }, [block.id, block.subtitle, block.name, block.timeLabel])
 
@@ -243,26 +246,23 @@ function DraggableBlock({
           onKeyDown={(e) => e.stopPropagation()}
         >
           <div className="bg-white rounded-lg p-4 w-full max-w-sm">
-            <h3 className="text-lg font-semibold mb-3">Editar actividad</h3>
-            <p className="text-sm text-gray-600 mb-3">
-              Modifica el título y agrega información adicional como "Teórica", "Práctica", profesor, etc.
-            </p>
+            <h3 className="text-lg font-semibold mb-3">{t('block.editSubtitle')}</h3>
             
             <div className="space-y-3 mb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('export.form.title')}</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Nombre de la actividad"
+                  placeholder={t('export.form.subtitle')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Hora inicio</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.from')}</label>
                   <input
                     type="time"
                     value={startTime}
@@ -273,7 +273,7 @@ function DraggableBlock({
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Hora fin</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.to')}</label>
                   <input
                     type="time"
                     value={endTime}
@@ -285,12 +285,12 @@ function DraggableBlock({
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subtítulo (opcional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('block.editSubtitle')}</label>
                 <input
                   type="text"
                   value={subtitle}
                   onChange={(e) => setSubtitle(e.target.value)}
-                  placeholder="Ej: Teórica - Prof. García"
+                  placeholder={t('block.editSubtitle')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -354,6 +354,16 @@ function Cell({ dayIndex, slotIndex, onCellClick, isPlacementArmed }) {
     lunchEnd = '14:00',
   } = config ?? {}
 
+  const { t } = useTranslation();
+  const dayNameToKey = {
+    'Lunes': 'mon',
+    'Martes': 'tue',
+    'Miércoles': 'wed',
+    'Jueves': 'thu',
+    'Viernes': 'fri',
+    'Sábado': 'sat',
+    'Domingo': 'sun',
+  };
   const slots = useMemo(() => {
     const [eh, em] = end.split(':').map(Number)
     const endMin = eh * 60 + em
@@ -736,19 +746,19 @@ function Cell({ dayIndex, slotIndex, onCellClick, isPlacementArmed }) {
       const slotIndex = clamp(Math.round(y / slotPxRef.current), 0, maxSlotIndex)
 
       setBlocks(prev => prev.map(b => {
-        if (b.id !== resizing.id) return b
+        if (b.id !== resizing.id) return b;
         if (resizing.handle === 'bottom') {
-          const minEnd = b.startSlot + 1
-          const newEnd = clamp(slotIndex + 1, minEnd, maxSlotIndex + 1)
+          const minEnd = b.startSlot + 1;
+          const newEnd = clamp(slotIndex + 1, minEnd, maxSlotIndex + 1);
           return {
             ...b,
             endSlot: newEnd,
             heightPx: toHeightPx(b.startSlot, newEnd),
             timeLabel: slotIndexToLabel(start, stepMin, b.startSlot + 1, newEnd + 1),
-          }
+          };
         } else {
-          const maxStart = b.endSlot - 1
-          const newStart = clamp(slotIndex, 0, maxStart)
+          const maxStart = b.endSlot - 1;
+          const newStart = clamp(slotIndex, 0, maxStart);
           return {
             ...b,
             startSlot: newStart,
@@ -813,7 +823,7 @@ function Cell({ dayIndex, slotIndex, onCellClick, isPlacementArmed }) {
             {/* Columna fija de horas */}
             <div className="relative">
               <div className="sticky top-0 z-30 bg-white p-3 text-xs sm:text-sm font-medium text-gray-600 border-b border-gray-100">
-                {isPlacementArmed ? 'Modo colocar' : 'Hora'}
+                {isPlacementArmed ? t('grid.placeMode') : t('grid.hour')}
               </div>
               <div className="relative">
                 {slots.map((_, i) => {
@@ -863,7 +873,7 @@ function Cell({ dayIndex, slotIndex, onCellClick, isPlacementArmed }) {
               <div className="grid sticky top-0 z-10 bg-white" style={{ gridTemplateColumns: rightHeaderCols }}>
                 {days.map(d => (
                   <div key={d} className="p-3 text-center text-xs sm:text-sm font-semibold text-gray-700 border-l border-gray-100 min-w-[160px]">
-                    {d}
+                    {t(`days.${dayNameToKey[d]}`) || d}
                   </div>
                 ))}
               </div>
@@ -980,46 +990,46 @@ function Cell({ dayIndex, slotIndex, onCellClick, isPlacementArmed }) {
             color: '#1e3a8a'
           }}
         >
-          Modo colocar activo: tocá una casilla.
+          {t('grid.placeModeActive')}
           <button
             onClick={() => { setPlaceActivity(null); window.dispatchEvent(new CustomEvent('cancel-place-activity')) }}
             className="text-xs rounded-lg border px-3 py-1 hover:bg-white"
           >
-            Cancelar
+            {t('common.cancel')}
           </button>
         </div>
       )}
       {selectedId && (
         <div className="mt-3 p-3 rounded-xl text-sm flex items-center justify-between bg-yellow-50 border border-yellow-200 text-yellow-900">
           <div className="flex-1">
-            <div className="font-medium">Tarjeta seleccionada:</div>
+            <div className="font-medium">{t('grid.cardSelected')}</div>
             <div className="text-xs opacity-90 mt-1">
-              • Tocá cualquier celda para mover la tarjeta
-              • Presiona Delete/Backspace para borrar la tarjeta
-              • Haz clic en un input para deseleccionar
+              • {t('grid.help.move')}
+              • {t('grid.help.delete')}
+              • {t('grid.help.deselect')}
             </div>
           </div>
           <button
             onClick={() => setSelectedId(null)}
             className="text-xs rounded-lg border px-3 py-1 hover:bg-white"
           >
-            Deseleccionar
+            {t('grid.deselect')}
           </button>
         </div>
       )}
       {moveBlockId && !selectedId && (
         <div className="mt-3 p-3 rounded-xl text-sm flex items-center justify-between bg-yellow-50 border border-yellow-200 text-yellow-900">
           <div className="flex-1">
-            <div className="font-medium">Modo mover activo:</div>
+            <div className="font-medium">{t('grid.moveMode')}</div>
             <div className="text-xs opacity-90 mt-1">
-              • Tocá una celda destino para mover la tarjeta
+              • {t('grid.help.moveToCell')}
             </div>
           </div>
                       <button
               onClick={() => setMoveBlockId(null)}
               className="text-xs rounded-lg border px-3 py-1 hover:bg-white"
             >
-            Cancelar
+            {t('common.cancel')}
           </button>
         </div>
       )}

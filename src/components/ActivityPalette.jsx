@@ -1,5 +1,6 @@
 // src/components/ActivityPalette.jsx
 import React, { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -26,6 +27,7 @@ const MORE_STRONG_COLORS = [
 const MORE_COLORS = [...MORE_PASTEL_COLORS, ...MORE_STRONG_COLORS];
 
 function ActivityBlock({ activity }) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: `palette-${activity.id}`,
     data: {
@@ -47,7 +49,7 @@ function ActivityBlock({ activity }) {
         {...listeners}
         style={style}
         className="rounded-lg shadow-sm border px-3 py-2 cursor-grab active:cursor-grabbing"
-        title="Arrastrá a la grilla"
+        title={t('palette.dragToGrid')}
       >
         <div className="flex items-center gap-2">
           <span
@@ -65,15 +67,16 @@ function ActivityBlock({ activity }) {
         onClick={() => {
           window.dispatchEvent(new CustomEvent('arm-place-activity', { detail: { activity } }))
         }}
-        title="Colocar esta actividad tocando una casilla en la grilla"
+        title={t('palette.placeTip')}
       >
-        Colocar
+        {t('palette.place')}
       </button>
     </div>
   )
 }
 
 export default function ActivityPalette({ onAdd, activities = [] }) {
+  const { t } = useTranslation();
   const [name, setName] = useState('')
   const [defaultIdx, setDefaultIdx] = useState(0)
   const [color, setColor] = useState(QUICK_COLORS[0])
@@ -123,7 +126,7 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
 
   return (
     <div id="activity-palette" className="bg-white rounded-lg border p-4 shadow-sm">
-      <h2 id="palette-title" className="text-sm font-semibold mb-3">Crear actividad</h2>
+      <h2 id="palette-title" className="text-sm font-semibold mb-3">{t('palette.create')}</h2>
 
       <form id="palette-form" onSubmit={handleSubmit} className="space-y-3">
         <div>
@@ -132,7 +135,7 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            placeholder="Nombre de la actividad"
+            placeholder={t('palette.namePlaceholder')}
           />
         </div>
 
@@ -155,9 +158,9 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
               type="button"
               className="text-xs rounded border px-2 py-1"
               onClick={() => setShowMoreColors((s) => !s)}
-              title="Más colores"
+            title={t('palette.moreColors')}
             >
-              Más
+            {t('palette.more')}
             </button>
 
             {showMoreColors && (
@@ -187,13 +190,13 @@ export default function ActivityPalette({ onAdd, activities = [] }) {
           type="submit"
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm hover:bg-blue-700"
         >
-          Agregar
+        {t('palette.add')}
         </button>
       </form>
 
       {activities.length > 0 && (
         <div className="mt-4 pt-3 border-t">
-          <h3 className="text-xs font-medium text-gray-600 mb-2">Actividades:</h3>
+          <h3 className="text-xs font-medium text-gray-600 mb-2">{t('palette.activities')}</h3>
           <div className="space-y-2">
             {activities.map((activity, index) => (
               <ActivityBlock key={activity.id} activity={activity} id={`activity-block-${index}`} />

@@ -1,33 +1,177 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
-  <!-- Home -->
+<?xml version="2.1" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- HOME -->
   <url>
-    <loc>https://myweekly.online/</loc>
-    <lastmod>2025-08-29</lastmod>
-    <priority>1.0</priority>
+    <loc>https://myweekly.online/es</loc>
+    <lastmod>2025-09-18</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://myweekly.online/es"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://myweekly.online/en"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://myweekly.online/it"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://myweekly.online/ja"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://myweekly.online/ko"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://myweekly.online/nl"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://myweekly.online/pl"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://myweekly.online/tr"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://myweekly.online/vi"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://myweekly.online/id"/>
+    <xhtml:link rel="alternate" hreflang="no" href="https://myweekly.online/no"/>
+    <xhtml:link rel="alternate" hreflang="fi" href="https://myweekly.online/fi"/>
+    <xhtml:link rel="alternate" hreflang="sv" href="https://myweekly.online/sv"/>
+    <xhtml:link rel="alternate" hreflang="da" href="https://myweekly.online/da"/>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://myweekly.online/cs"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://myweekly.online/en"/>
   </url>
 
-  <!-- Privacy -->
+  <!-- PRIVACY -->
   <url>
-    <loc>https://myweekly.online/privacy</loc>
-    <lastmod>2025-08-29</lastmod>
-    <priority>0.8</priority>
+    <loc>https://myweekly.online/es/privacy</loc>
+    <lastmod>2025-09-18</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://myweekly.online/es/privacy"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://myweekly.online/en/privacy"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://myweekly.online/it/privacy"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr/privacy"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de/privacy"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt/privacy"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh/privacy"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi/privacy"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar/privacy"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru/privacy"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://myweekly.online/ja/privacy"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://myweekly.online/ko/privacy"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://myweekly.online/nl/privacy"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://myweekly.online/pl/privacy"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://myweekly.online/tr/privacy"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://myweekly.online/vi/privacy"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://myweekly.online/id/privacy"/>
+    <xhtml:link rel="alternate" hreflang="no" href="https://myweekly.online/no/privacy"/>
+    <xhtml:link rel="alternate" hreflang="fi" href="https://myweekly.online/fi/privacy"/>
+    <xhtml:link rel="alternate" hreflang="sv" href="https://myweekly.online/sv/privacy"/>
+    <xhtml:link rel="alternate" hreflang="da" href="https://myweekly.online/da/privacy"/>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://myweekly.online/cs/privacy"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://myweekly.online/en/privacy"/>
   </url>
 
-  <!-- Terms -->
+  <!-- TERMS -->
   <url>
-    <loc>https://myweekly.online/terms</loc>
-    <lastmod>2025-08-29</lastmod>
-    <priority>0.8</priority>
+    <loc>https://myweekly.online/es/terms</loc>
+    <lastmod>2025-09-18</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://myweekly.online/es/terms"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://myweekly.online/en/terms"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://myweekly.online/it/terms"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr/terms"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de/terms"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt/terms"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh/terms"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi/terms"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar/terms"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru/terms"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://myweekly.online/ja/terms"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://myweekly.online/ko/terms"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://myweekly.online/nl/terms"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://myweekly.online/pl/terms"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://myweekly.online/tr/terms"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://myweekly.online/vi/terms"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://myweekly.online/id/terms"/>
+    <xhtml:link rel="alternate" hreflang="no" href="https://myweekly.online/no/terms"/>
+    <xhtml:link rel="alternate" hreflang="fi" href="https://myweekly.online/fi/terms"/>
+    <xhtml:link rel="alternate" hreflang="sv" href="https://myweekly.online/sv/terms"/>
+    <xhtml:link rel="alternate" hreflang="da" href="https://myweekly.online/da/terms"/>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://myweekly.online/cs/terms"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://myweekly.online/en/terms"/>
   </url>
 
   <!-- FAQ -->
   <url>
-    <loc>https://myweekly.online/faq</loc>
-    <lastmod>2025-08-29</lastmod>
-    <priority>0.7</priority>
+    <loc>https://myweekly.online/es/faq</loc>
+    <lastmod>2025-09-18</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://myweekly.online/es/faq"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://myweekly.online/en/faq"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://myweekly.online/it/faq"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr/faq"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de/faq"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt/faq"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh/faq"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi/faq"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar/faq"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru/faq"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://myweekly.online/ja/faq"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://myweekly.online/ko/faq"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://myweekly.online/nl/faq"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://myweekly.online/pl/faq"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://myweekly.online/tr/faq"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://myweekly.online/vi/faq"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://myweekly.online/id/faq"/>
+    <xhtml:link rel="alternate" hreflang="no" href="https://myweekly.online/no/faq"/>
+    <xhtml:link rel="alternate" hreflang="fi" href="https://myweekly.online/fi/faq"/>
+    <xhtml:link rel="alternate" hreflang="sv" href="https://myweekly.online/sv/faq"/>
+    <xhtml:link rel="alternate" hreflang="da" href="https://myweekly.online/da/faq"/>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://myweekly.online/cs/faq"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://myweekly.online/en/faq"/>
   </url>
 
-</urlset>
+  <!-- HISTORY -->
+  <url>
+    <loc>https://myweekly.online/es/history</loc>
+    <lastmod>2025-09-18</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://myweekly.online/es/history"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://myweekly.online/en/history"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://myweekly.online/it/history"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr/history"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de/history"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt/history"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh/history"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi/history"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar/history"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru/history"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://myweekly.online/ja/history"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://myweekly.online/ko/history"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://myweekly.online/nl/history"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://myweekly.online/pl/history"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://myweekly.online/tr/history"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://myweekly.online/vi/history"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://myweekly.online/id/history"/>
+    <xhtml:link rel="alternate" hreflang="no" href="https://myweekly.online/no/history"/>
+    <xhtml:link rel="alternate" hreflang="fi" href="https://myweekly.online/fi/history"/>
+    <xhtml:link rel="alternate" hreflang="sv" href="https://myweekly.online/sv/history"/>
+    <xhtml:link rel="alternate" hreflang="da" href="https://myweekly.online/da/history"/>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://myweekly.online/cs/history"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://myweekly.online/en/history"/>
+  </url>
 
+  <!-- HOW TO USE -->
+  <url>
+    <loc>https://myweekly.online/es/howtouse</loc>
+    <lastmod>2025-09-18</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://myweekly.online/es/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://myweekly.online/en/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://myweekly.online/it/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://myweekly.online/fr/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://myweekly.online/de/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://myweekly.online/pt/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://myweekly.online/zh/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://myweekly.online/hi/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://myweekly.online/ar/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://myweekly.online/ru/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://myweekly.online/ja/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://myweekly.online/ko/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://myweekly.online/nl/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://myweekly.online/pl/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://myweekly.online/tr/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://myweekly.online/vi/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://myweekly.online/id/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="no" href="https://myweekly.online/no/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="fi" href="https://myweekly.online/fi/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="sv" href="https://myweekly.online/sv/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="da" href="https://myweekly.online/da/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://myweekly.online/cs/howtouse"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://myweekly.online/en/howtouse"/>
+  </url>
+</urlset>

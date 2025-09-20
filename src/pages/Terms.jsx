@@ -1,41 +1,29 @@
 import React from "react";
 import PageShell, { Card } from "./PageShell";
+import { useTranslation } from 'react-i18next';
 
 export default function Terms() {
+  const { t } = useTranslation();
   return (
     <PageShell
-      title="Términos & Condiciones"
-      description="Condiciones básicas para usar MyWeekly."
+      title={t('pages.terms.title')}
+      description={t('pages.terms.description')}
     >
       <div className="grid gap-5">
-        <Card title="Uso del servicio">
-          <p className="text-slate-700">
-            MyWeekly se ofrece “tal cual”, sin garantías. Podés utilizarlo para
-            crear y exportar tu cronograma personal. No nos hacemos responsables
-            por pérdidas de datos locales ni por decisiones tomadas en base a la
-            información que generes.
-          </p>
+        <Card title={t('terms.service.title')}>
+          <p className="text-slate-700">{t('terms.service.p')}</p>
         </Card>
 
-        <Card title="Propiedad intelectual">
-          <p className="text-slate-700">
-            El software, diseño y marca pertenecen a MyWeekly. Tu contenido
-            (títulos, notas, horarios) es tuyo.
-          </p>
+        <Card title={t('terms.ip.title')}>
+          <p className="text-slate-700">{t('terms.ip.p')}</p>
         </Card>
 
-        <Card title="Limitación de responsabilidad">
-          <p className="text-slate-700">
-            En ningún caso seremos responsables por daños indirectos, incidentales
-            o consecuentes derivados del uso del servicio.
-          </p>
+        <Card title={t('terms.liability.title')}>
+          <p className="text-slate-700">{t('terms.liability.p')}</p>
         </Card>
 
-        <Card title="Cambios">
-          <p className="text-slate-700">
-            Podemos modificar estos términos y/o la app. Si los cambios son
-            relevantes, lo indicaremos en esta página.
-          </p>
+        <Card title={t('terms.changes.title')}>
+          <p className="text-slate-700">{t('terms.changes.p')}</p>
         </Card>
       </div>
     </PageShell>
