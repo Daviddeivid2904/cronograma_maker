@@ -7,11 +7,24 @@ import ActivityList from './components/ActivityList.jsx'
 import SettingsBar from './components/SettingsBar.jsx'
 import WeekGrid from './components/WeekGrid.jsx'
 import ExportPanel from './components/ExportPanel.jsx'
-import AdRail from './components/AdRail.jsx'
 import { computeDaysRange } from './lib/time.js'
 import { saveToStorage, loadFromStorage, STORAGE_KEYS, isStorageAvailable } from './lib/storage.js'
 import LanguageSwitcher from './components/LanguageSwitcher.jsx'
 import { FaGlobe } from 'react-icons/fa';
+
+// ------- Hook: detectar desktop (lg+) para NO renderizar ads en mobile -------
+function useIsDesktop() {
+  const query = '(min-width: 1024px)'; // Tailwind lg
+  const get = () => (typeof window !== 'undefined' && window.matchMedia(query).matches);
+  const [isDesktop, setIsDesktop] = useState(get);
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = e => setIsDesktop(e.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+  return isDesktop;
+}
 
 export default function App() {
   const { lang } = useParams();
@@ -24,19 +37,13 @@ export default function App() {
   }, [lang, i18n]);
 
   const [activities, setActivities] = useState(() => {
-    if (isStorageAvailable()) {
-      const loaded = loadFromStorage(STORAGE_KEYS.ACTIVITIES, []);
-      return loaded;
-    }
+    if (isStorageAvailable()) return loadFromStorage(STORAGE_KEYS.ACTIVITIES, []);
     return [];
   });
 
   const [showExportPanel, setShowExportPanel] = useState(false)
   const [blocks, setBlocks] = useState(() => {
-    if (isStorageAvailable()) {
-      const loaded = loadFromStorage(STORAGE_KEYS.BLOCKS, []);
-      return loaded;
-    }
+    if (isStorageAvailable()) return loadFromStorage(STORAGE_KEYS.BLOCKS, []);
     return [];
   });
 
@@ -84,36 +91,27 @@ export default function App() {
   }, [days, t])
 
   useEffect(() => {
-    if (isStorageAvailable()) {
-      saveToStorage(STORAGE_KEYS.ACTIVITIES, activities);
-    }
+    if (isStorageAvailable()) saveToStorage(STORAGE_KEYS.ACTIVITIES, activities);
   }, [activities]);
 
   useEffect(() => {
-    if (isStorageAvailable()) {
-      saveToStorage(STORAGE_KEYS.BLOCKS, blocks);
-    }
+    if (isStorageAvailable()) saveToStorage(STORAGE_KEYS.BLOCKS, blocks);
   }, [blocks]);
 
   useEffect(() => {
-    if (isStorageAvailable()) {
-      saveToStorage(STORAGE_KEYS.SETTINGS, settings);
-    }
+    if (isStorageAvailable()) saveToStorage(STORAGE_KEYS.SETTINGS, settings);
   }, [settings]);
 
   function handleAddActivity({ name, color }) {
     setActivities(a => [...a, { id: crypto.randomUUID(), name, color }])
   }
-
   function handleCreateBreakCard({ name, color }) {
     setActivities(a => [...a, { id: crypto.randomUUID(), name, color }])
   }
-
   function handleAddToGrid(activity) {
     const ev = new CustomEvent('add-activity-to-grid', { detail: activity })
     window.dispatchEvent(ev)
   }
-
   function handleDeleteActivity(activityId) {
     setActivities(prev => prev.filter(a => a.id !== activityId))
     const ev = new CustomEvent('delete-activity', { detail: { activityId } })
@@ -130,17 +128,11 @@ export default function App() {
     lunchStart: settings.lunchStart,
     lunchEnd: settings.lunchEnd,
   }
+  const exportConfig = { ...gridConfig, days: translatedDays }
 
-  const exportConfig = {
-    ...gridConfig,
-    days: translatedDays,
-  }
-
-  // ===== Selector de idioma fijo arriba a la derecha =====
+  // ===== Selector de idioma (arriba fijo) =====
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const menuRef = useRef(null);
-
-  // Cerrar por click afuera
   useEffect(() => {
     function onDocClick(e) {
       if (!menuRef.current) return;
@@ -156,13 +148,31 @@ export default function App() {
     };
   }, [showLanguageMenu]);
 
+  // ===== Selector de idioma (footer) =====
+  const [showLangFooter, setShowLangFooter] = useState(false);
+  const footerRef = useRef(null);
+  useEffect(() => {
+    function onDocClick(e) {
+      if (!footerRef.current) return;
+      if (!footerRef.current.contains(e.target)) setShowLangFooter(false);
+    }
+    if (showLangFooter) {
+      document.addEventListener('mousedown', onDocClick);
+      document.addEventListener('touchstart', onDocClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('touchstart', onDocClick);
+    };
+  }, [showLangFooter]);
+
+  // Mostrar ads solo en desktop
+  const isDesktop = useIsDesktop();
+
   return (
     <div id="app-container" className="relative w-full overflow-x-hidden">
-      {/* Botón fijo arriba-derecha */}
-      <div
-        ref={menuRef}
-        className="fixed top-4 right-4 z-50"
-      >
+      {/* Botón fijo arriba-derecha (corrido para no tapar el rail derecho) */}
+      <div ref={menuRef} className="fixed top-4 right-4 lg:right-[210px] z-50">
         <button
           onClick={() => setShowLanguageMenu(prev => !prev)}
           className="bg-white/90 backdrop-blur px-2 py-2 rounded-full border border-gray-200 text-gray-700 shadow hover:bg-white"
@@ -175,7 +185,7 @@ export default function App() {
         {showLanguageMenu && (
           <div
             role="menu"
-            className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+            className="absolute right-0 mt-2 w-48 max-w-[90vw] bg-white border border-gray-200 rounded-lg shadow-lg z-50"
           >
             <LanguageSwitcher onSelect={() => setShowLanguageMenu(false)} />
           </div>
@@ -186,15 +196,17 @@ export default function App() {
       <div className="mx-auto w-full max-w-screen-2xl px-3 sm:px-4">
         <div className="w-full lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1100px)_minmax(0,1fr)] lg:gap-4">
 
-          {/* IZQUIERDA: Ads */}
-          <aside className="hidden lg:block self-start">
-            <div className="mx-auto space-y-4" style={{ width: "160px" }}>
-              <ins className="adsbygoogle" style={{ display: "inline-block", width: "160px", height: "600px" }} data-ad-client="ca-pub-5238026837919071" data-ad-slot="3734034674"></ins>
-              <script dangerouslySetInnerHTML={{ __html: `(adsbygoogle = window.adsbygoogle || []).push({});` }} />
-              <ins className="adsbygoogle" style={{ display: "inline-block", width: "160px", height: "600px" }} data-ad-client="ca-pub-5238026837919071" data-ad-slot="7362840807"></ins>
-              <script dangerouslySetInnerHTML={{ __html: `(adsbygoogle = window.adsbygoogle || []).push({});` }} />
-            </div>
-          </aside>
+          {/* IZQUIERDA: Ads (solo desktop) */}
+          {isDesktop && (
+            <aside className="self-start">
+              <div className="mx-auto space-y-4" style={{ width: "160px" }}>
+                <ins className="adsbygoogle" style={{ display: "inline-block", width: "160px", height: "600px" }} data-ad-client="ca-pub-5238026837919071" data-ad-slot="3734034674"></ins>
+                <script dangerouslySetInnerHTML={{ __html: `(adsbygoogle = window.adsbygoogle || []).push({});` }} />
+                <ins className="adsbygoogle" style={{ display: "inline-block", width: "160px", height: "600px" }} data-ad-client="ca-pub-5238026837919071" data-ad-slot="7362840807"></ins>
+                <script dangerouslySetInnerHTML={{ __html: `(adsbygoogle = window.adsbygoogle || []).push({});` }} />
+              </div>
+            </aside>
+          )}
 
           {/* CENTRO */}
           <main className="min-w-0 w-full">
@@ -204,7 +216,6 @@ export default function App() {
                   <h1 className="text-2xl font-bold">{t('title')}</h1>
                   <p className="text-gray-600">{t('subtitle')}</p>
                 </div>
-                {/* Nota: el selector fijo ya está fuera del header */}
                 <button
                   onClick={() => setShowExportPanel(true)}
                   className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
@@ -256,18 +267,43 @@ export default function App() {
 
               <footer id="footer" className="text-center text-xs text-gray-500 pt-4">
                 <p>{t('footer.blurb')}</p>
-                <div id="footer-links" className="text-sm text-gray-600">
+
+                {/* Selector de idioma en el footer */}
+                <div className="mt-3 flex items-center justify-center">
+                  <div ref={footerRef} className="relative">
+                    <button
+                      onClick={() => setShowLangFooter(v => !v)}
+                      className="inline-flex items-center gap-2 bg-white px-3 py-2 rounded-full border border-gray-200 text-gray-700 shadow hover:bg-gray-50"
+                      aria-haspopup="menu"
+                      aria-expanded={showLangFooter ? 'true' : 'false'}
+                    >
+                      <FaGlobe size={16} />
+                      <span className="text-sm">languages</span>
+                    </button>
+                    {showLangFooter && (
+                      <div
+                        role="menu"
+                        className="absolute left-1/2 -translate-x-1/2 mt-2 w-56 max-w-[90vw] bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                      >
+                        <LanguageSwitcher onSelect={() => setShowLangFooter(false)} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div id="footer-links" className="mt-3 text-sm text-gray-600">
                   <Link id="click-privacy" to={`/${lang || i18n.resolvedLanguage}/privacy`} className="mx-2 hover:underline">{t('nav.privacy')}</Link>
                   <Link id="click-faq" to={`/${lang || i18n.resolvedLanguage}/faq`} className="mx-2 hover:underline">{t('nav.faq')}</Link>
                   <Link id="click-terms" to={`/${lang || i18n.resolvedLanguage}/terms`} className="mx-2 hover:underline">{t('nav.terms')}</Link>
                   <Link id="click-history" to={`/${lang || i18n.resolvedLanguage}/history`} className="mx-2 hover:underline">{t('nav.history')}</Link>
                   <Link id="click-how-to-use" to={`/${lang || i18n.resolvedLanguage}/how-to-use`} className="mx-2 hover:underline">{t('nav.howtouse')}</Link>
                 </div>
+
                 <a
                   href="https://www.linkedin.com/in/david-lekerman/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-indigo-600 hover:underline"
+                  className="text-sm text-indigo-600 hover:underline block mt-2"
                   title="LinkedIn de David Lekerman"
                 >
                   by David Lekerman
@@ -276,15 +312,17 @@ export default function App() {
             </div>
           </main>
 
-          {/* DERECHA: Ads */}
-          <aside className="hidden lg:block self-start">
-            <div className="mx-auto space-y-4" style={{ width: "160px" }}>
-              <ins className="adsbygoogle" style={{ display: "inline-block", width: "160px", height: "600px" }} data-ad-client="ca-pub-5238026837919071" data-ad-slot="1473900517"></ins>
-              <script dangerouslySetInnerHTML={{ __html: `(adsbygoogle = window.adsbygoogle || []).push({});` }} />
-              <ins className="adsbygoogle" style={{ display: "inline-block", width: "160px", height: "600px" }} data-ad-client="ca-pub-5238026837919071" data-ad-slot="4489249542"></ins>
-              <script dangerouslySetInnerHTML={{ __html: `(adsbygoogle = window.adsbygoogle || []).push({});` }} />
-            </div>
-          </aside>
+          {/* DERECHA: Ads (solo desktop) */}
+          {isDesktop && (
+            <aside className="self-start">
+              <div className="mx-auto space-y-4" style={{ width: "160px" }}>
+                <ins className="adsbygoogle" style={{ display: "inline-block", width: "160px", height: "600px" }} data-ad-client="ca-pub-5238026837919071" data-ad-slot="1473900517"></ins>
+                <script dangerouslySetInnerHTML={{ __html: `(adsbygoogle = window.adsbygoogle || []).push({});` }} />
+                <ins className="adsbygoogle" style={{ display: "inline-block", width: "160px", height: "600px" }} data-ad-client="ca-pub-5238026837919071" data-ad-slot="4489249542"></ins>
+                <script dangerouslySetInnerHTML={{ __html: `(adsbygoogle = window.adsbygoogle || []).push({});` }} />
+              </div>
+            </aside>
+          )}
 
         </div>
       </div>
