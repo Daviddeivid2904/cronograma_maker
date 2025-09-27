@@ -239,6 +239,22 @@ export default function App() {
                   onDelete={handleDeleteActivity}
                 />
               </WeekGrid>
+              {/* Banner Ad entre la grilla y la configuración (solo mobile) */}
+{/*
+<div className="my-4 lg:hidden flex justify-center">
+  <ins
+    className="adsbygoogle"
+    style={{ display: "block", width: "100%", height: "250px" }}
+    data-ad-client="ca-pub-5238026837919071"
+    data-ad-slot="7695483844"   // 👈 cambia este por un slot nuevo
+  ></ins>
+  <script
+    dangerouslySetInnerHTML={{
+      __html: `(adsbygoogle = window.adsbygoogle || []).push({});`,
+    }}
+  />
+</div>
+*/}
 
               <SettingsBar
                 value={settings}
@@ -264,6 +280,23 @@ export default function App() {
                   {t('downloadImage')}
                 </button>
               </div>
+
+              {/* Banner Ad debajo del botón de descarga (solo mobile) */}
+{/*
+<div className="my-4 lg:hidden flex justify-center">
+  <ins
+    className="adsbygoogle"
+    style={{ display: "block", width: "100%", height: "250px" }}
+    data-ad-client="ca-pub-5238026837919071"
+    data-ad-slot="9046533460"   // 👈 cambia este por un slot distinto
+  ></ins>
+  <script
+    dangerouslySetInnerHTML={{
+      __html: `(adsbygoogle = window.adsbygoogle || []).push({});`,
+    }}
+  />
+</div>
+*/}
 
               <footer id="footer" className="text-center text-xs text-gray-500 pt-4">
                 <p>{t('footer.blurb')}</p>
